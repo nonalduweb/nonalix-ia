@@ -37,11 +37,6 @@ Route::middleware('guest')->group(function () {
     Route::post('login', [AuthenticatedSessionController::class, 'store'])
         ->middleware('throttle:login');
 
-    Route::get('two-factor-challenge',  [TwoFactorChallengeController::class, 'create'])
-        ->name('two-factor.challenge');
-    Route::post('two-factor-challenge', [TwoFactorChallengeController::class, 'store'])
-        ->middleware('throttle:two-factor');
-
     // --- Inscription d'une entreprise, sur code d'accès ------------------------
     // Fermée par défaut : sans code valide, aucun compte n'est créé. Le
     // throttling est indispensable — sans lui, le code serait devinable par
@@ -98,6 +93,24 @@ Route::middleware('auth')->group(function () {
 Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
     ->middleware('auth')
     ->name('logout');
+
+// --- Défi 2FA -----------------------------------------------------------------
+// `auth` et NON `guest` : à cet instant la session est ouverte, seul le second
+// facteur manque. Placé parmi les routes d'invités, le middleware `guest`
+// renvoyait l'utilisateur authentifié vers le tableau de bord, lequel exige la
+// 2FA et le renvoyait au défi — boucle infinie, ERR_TOO_MANY_REDIRECTS, et
+// aucun moyen de se connecter dès lors que la 2FA était activée.
+//
+// Sans `verified` : la confirmation d'adresse est exigée plus loin, par les
+// routes applicatives. L'ajouter ici créerait un second aller-retour possible
+// entre deux barrières, pour un gain nul — franchir le défi n'ouvre aucun accès
+// par lui-même.
+Route::middleware('auth')->group(function () {
+    Route::get('two-factor-challenge',  [TwoFactorChallengeController::class, 'create'])
+        ->name('two-factor.challenge');
+    Route::post('two-factor-challenge', [TwoFactorChallengeController::class, 'store'])
+        ->middleware('throttle:two-factor');
+});
 
 // --- Configuration de la 2FA (avant qu'elle ne soit exigée) -------------------
 Route::middleware(['auth', 'verified'])->prefix('two-factor')->as('two-factor.')->group(function () {
