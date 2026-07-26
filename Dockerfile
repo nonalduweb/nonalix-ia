@@ -86,7 +86,20 @@ COPY --chown=www-data:www-data . .
 COPY --from=vendor  --chown=www-data:www-data /var/www/html/vendor ./vendor
 COPY --from=assets  --chown=www-data:www-data /app/public/build    ./public/build
 
-RUN composer dump-autoload --no-dev --optimize --classmap-authoritative \
+# BROADCAST_CONNECTION=null est indispensable ici, et seulement ici.
+#
+# dump-autoload déclenche `artisan package:discover`, qui charge
+# routes/channels.php. Or BroadcastManager n'expose pas channel() : l'appel
+# passe par __call, qui construit le broadcaster PAR DÉFAUT. Avec la connexion
+# `reverb`, cela instancie un client Pusher — et il n'y a pas de .env pendant
+# le build (à raison : il ne doit pas entrer dans l'image), donc
+# REVERB_APP_KEY est nulle et le constructeur lève une TypeError.
+#
+# La variable est posée en préfixe de cette commande, pas en ENV : une ENV
+# survivrait dans l'image et, Laravel ne laissant pas .env écraser une
+# variable d'environnement réelle, désactiverait le temps réel en production.
+RUN BROADCAST_CONNECTION=null \
+    composer dump-autoload --no-dev --optimize --classmap-authoritative \
     && mkdir -p storage/framework/{cache/data,sessions,views} storage/logs bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
