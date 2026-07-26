@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AccessCodeController;
 use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\App\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ImpersonationController;
 use App\Http\Controllers\Admin\IncidentController;
@@ -21,6 +22,14 @@ use Illuminate\Support\Facades\Route;
 | Toute consultation de données client passe soit par une agrégation, soit par
 | une impersonation tracée — jamais par une désactivation silencieuse du scope.
 */
+
+// La déconnexion doit exister sur CE domaine aussi : le bouton de
+// l'administration poste en relatif, et sans cette route il tombait sur un 404.
+// Hors du groupe `super-admin` à dessein — pouvoir fermer sa session ne doit
+// dépendre d'aucun privilège, y compris pour un compte en état incohérent.
+Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
+    ->middleware('auth')
+    ->name('admin.logout');
 
 Route::middleware(['auth', '2fa', 'super-admin'])->group(function () {
 

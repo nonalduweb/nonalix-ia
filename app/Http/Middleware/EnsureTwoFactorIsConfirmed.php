@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Support\Domain;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -33,13 +34,16 @@ class EnsureTwoFactorIsConfirmed
             return $next($request);
         }
 
+        // Domain::redirectTo : les écrans de 2FA vivent sur app.*, alors que
+        // ce middleware protège aussi admin.*. Une redirection inter-domaines
+        // ordinaire serait avalée en silence par Inertia.
         if (! $user->hasTwoFactorEnabled()) {
             return $request->expectsJson()
                 ? response()->json([
                     'message' => 'L\'authentification à deux facteurs doit être activée.',
                     'code'    => 'two_factor_setup_required',
                 ], 403)
-                : redirect()->route('two-factor.setup');
+                : Domain::redirectTo(route('two-factor.setup'));
         }
 
         // Le défi est validé une fois par session, pas à chaque requête.
@@ -49,7 +53,7 @@ class EnsureTwoFactorIsConfirmed
                     'message' => 'Validation à deux facteurs requise.',
                     'code'    => 'two_factor_challenge_required',
                 ], 403)
-                : redirect()->route('two-factor.challenge');
+                : Domain::redirectTo(route('two-factor.challenge'));
         }
 
         return $next($request);

@@ -92,7 +92,7 @@ class AuthenticatedSessionController
         return redirect()->intended(route('dashboard'));
     }
 
-    public function destroy(Request $request): RedirectResponse
+    public function destroy(Request $request): HttpResponse
     {
         $this->audit->log('auth.logout');
 
@@ -101,6 +101,13 @@ class AuthenticatedSessionController
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('login');
+        // La déconnexion est joignable depuis app.* comme depuis admin.*, or
+        // la page de connexion vit sur app.* : depuis l'administration, c'est
+        // une redirection inter-domaines, qu'Inertia avalerait en silence.
+        //
+        // Inertia::location() provoque une navigation complète du navigateur —
+        // ce qui est de toute façon souhaitable ici : l'état client en mémoire
+        // est intégralement rechargé, sans reliquat de la session fermée.
+        return Inertia::location(route('login'));
     }
 }

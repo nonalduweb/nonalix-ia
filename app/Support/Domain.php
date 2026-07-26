@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Support;
 
+use Inertia\Inertia;
+use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
+
 /**
  * Construction des URL inter-domaines.
  *
@@ -40,6 +43,32 @@ final class Domain
     public static function api(string $path = '/'): string
     {
         return self::url((string) config('nonalix.domains.api'), $path);
+    }
+
+    /**
+     * Redirige vers une URL, en tenant compte d'Inertia.
+     *
+     * Une redirection 302 vers un AUTRE domaine est suivie en silence par le
+     * XHR d'Inertia : le navigateur récupère le HTML de la cible, qu'Inertia
+     * ne sait pas interpréter, et il ne se passe RIEN — aucune erreur, ni à
+     * l'écran ni dans les journaux, puisque la réponse est un 302 valide.
+     *
+     * Inertia impose un 409 porteur de X-Inertia-Location pour ce cas.
+     * L'application servant quatre domaines qui se renvoient l'un vers
+     * l'autre, le piège est partout : ce point d'entrée unique évite d'y
+     * retomber.
+     *
+     * À l'intérieur d'un même domaine, la redirection ordinaire est conservée
+     * — elle évite un rechargement complet de page.
+     */
+    public static function redirectTo(string $url): SymfonyResponse
+    {
+        $target  = parse_url($url, PHP_URL_HOST);
+        $current = request()?->getHost();
+
+        return $target !== null && $current !== null && $target !== $current
+            ? Inertia::location($url)
+            : redirect()->to($url);
     }
 
     private static function scheme(): string
