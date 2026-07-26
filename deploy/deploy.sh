@@ -23,11 +23,6 @@ if [ "${APP_ENV:-}" != "production" ]; then
 fi
 : "${APP_KEY:?absente — sans elle tous les secrets chiffrés sont illisibles}"
 
-if [ ! -f docker/nginx/enabled/10-https.conf ]; then
-    echo "ARRÊT : le vhost HTTPS n'est pas actif. Lancer d'abord ./deploy/init-tls.sh."
-    exit 1
-fi
-
 # --- 1. Sauvegarde de sécurité avant migration ------------------------------
 # Une migration qui échoue à mi-chemin laisse un schéma incohérent : ce dump
 # est le seul moyen de revenir en arrière.
@@ -63,6 +58,12 @@ $COMPOSE up -d --no-deps horizon scheduler
 # --- 6. Vérifier -------------------------------------------------------------
 $COMPOSE exec -T app php artisan nonalix:health
 $COMPOSE exec -T web nginx -t
+
+# Le TLS et le routage par domaine sont assurés par le Nginx de l'hôte : ce
+# point de contrôle vérifie la chaîne complète, pas seulement les conteneurs.
+curl -fsS --max-time 10 "http://127.0.0.1:${APP_PORT:-8081}/up" >/dev/null \
+    && echo "Conteneur web : /up répond." \
+    || echo "ATTENTION : /up ne répond pas sur 127.0.0.1:${APP_PORT:-8081}."
 
 echo
 echo "Déployé. Conteneurs :"

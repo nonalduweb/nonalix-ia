@@ -42,7 +42,3 @@ Thumbs.db
 
 # Docker : surcharges locales
 docker-compose.override.yml
-
-# Vhosts Nginx actifs : composés par deploy/init-tls.sh depuis available/,
-# leur contenu dépend de l'état du certificat sur chaque serveur.
-/docker/nginx/enabled/

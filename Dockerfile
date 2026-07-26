@@ -114,6 +114,7 @@ CMD ["php-fpm"]
 FROM nginx:1.27-alpine AS web
 
 COPY docker/nginx/nginx.conf /etc/nginx/nginx.conf
+COPY docker/nginx/prod.conf  /etc/nginx/conf.d/default.conf
 COPY --from=app /var/www/html/public /var/www/html/public
 
 # ---------------------------------------------------------------------------

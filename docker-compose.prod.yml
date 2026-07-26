@@ -47,8 +47,12 @@ services:
                                 # avant le basculement des conteneurs.
 
   # -------------------------------------------------------------------------
-  # Serveur web — porte public/ (assets Vite) et termine le TLS
+  # Serveur web — porte public/ (assets Vite)
   # -------------------------------------------------------------------------
+  # Le TLS est terminé par le Nginx de l'HÔTE, qui occupe déjà 80/443 pour
+  # nonalix-ci.com et dispose d'un certbot système auto-renouvelé. Ce
+  # conteneur n'est donc joignable que depuis la boucle locale du VPS ;
+  # deploy/nginx-host.conf décrit le vhost qui le relaie.
   web:
     image: nonalix/web:${IMAGE_TAG:-latest}
     build:
@@ -56,36 +60,10 @@ services:
       target: web
     container_name: nonalix-web
     ports:
-      - "${HTTP_BIND:-0.0.0.0}:80:80"
-      - "${HTTPS_BIND:-0.0.0.0}:443:443"
-    volumes:
-      # sites-enabled : init-tls.sh y active le vhost HTTPS une fois le
-      # certificat émis. Nginx refuserait de démarrer avec un ssl_certificate
-      # pointant sur un fichier absent.
-      - ./docker/nginx/enabled:/etc/nginx/conf.d:ro
-      - letsencrypt:/etc/letsencrypt:ro
-      - certbot-www:/var/www/certbot:ro
+      # L'adresse 127.0.0.1 est délibérée : sans elle, Docker écrit une règle
+      # DNAT qui court-circuite UFW et publie le conteneur sur Internet.
+      - "127.0.0.1:${APP_PORT:-8081}:80"
     depends_on: [app, reverb]
-    networks: [nonalix]
-    restart: unless-stopped
-    logging: *logging
-
-  # -------------------------------------------------------------------------
-  # Renouvellement TLS — tente un renouvellement deux fois par jour
-  # -------------------------------------------------------------------------
-  certbot:
-    image: certbot/certbot:latest
-    container_name: nonalix-certbot
-    volumes:
-      - letsencrypt:/etc/letsencrypt
-      - certbot-www:/var/www/certbot
-    # Let's Encrypt ne renouvelle qu'à 30 jours de l'expiration : ces passages
-    # sont des non-opérations la plupart du temps. L'heure est décalée pour
-    # éviter la minute pleine, où l'API est saturée.
-    entrypoint: >
-      sh -c "trap exit TERM;
-             while :; do certbot renew --webroot -w /var/www/certbot --quiet;
-             sleep 12h & wait $${!}; done"
     networks: [nonalix]
     restart: unless-stopped
     logging: *logging
@@ -186,8 +164,6 @@ volumes:
   postgres:
   redis:
   storage:
-  letsencrypt:
-  certbot-www:
 
 networks:
   nonalix:
