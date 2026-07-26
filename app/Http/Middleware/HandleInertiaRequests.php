@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Services\Tenancy\SetupChecklist;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -70,6 +71,16 @@ class HandleInertiaRequests extends Middleware
                 'app'   => config('nonalix.domains.app'),
                 'admin' => config('nonalix.domains.admin'),
             ],
+
+            // Avancement de la configuration, pour signaler dans les onglets ce
+            // qui reste à faire.
+            //
+            // Calculé UNIQUEMENT sur les écrans de réglages : ces vérifications
+            // font cinq requêtes, et les imposer au tableau de bord ou à la
+            // messagerie les alourdirait sans rien apporter.
+            'setup' => fn () => $request->is('settings*') && app(TenantContext::class)->has()
+                ? app(SetupChecklist::class)->forCurrentTenant()
+                : null,
         ]);
     }
 }
