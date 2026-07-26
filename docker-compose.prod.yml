@@ -10,17 +10,26 @@ name: nonalix-ia
 # et les assets compilés dans l'image — la production servirait les sources de
 # l'hôte avec un public/build absent.
 
+# Ces valeurs sont figées dans le bundle JavaScript au moment du build.
+#
+# Elles DOIVENT être identiques pour `app` et `web` : l'image app rend le HTML
+# depuis son manifeste, l'image web sert les fichiers. Si les arguments
+# diffèrent, le bundle diffère, donc son hash aussi — le HTML référence alors
+# un fichier que le serveur web n'a pas, et toute page tombe en 404 sur son JS.
+# D'où l'ancre : les deux services ne peuvent plus dériver l'un de l'autre.
+x-vite-args: &vite-args
+  VITE_APP_NAME:       ${APP_NAME:-Nonalix IA}
+  VITE_REVERB_APP_KEY: ${REVERB_APP_KEY:?REVERB_APP_KEY manquante}
+  VITE_REVERB_HOST:    ${NONALIX_DOMAIN_APP:?NONALIX_DOMAIN_APP manquant}
+  VITE_REVERB_PORT:    "443"
+  VITE_REVERB_SCHEME:  "https"
+
 x-app: &app
   image: nonalix/app:${IMAGE_TAG:-latest}
   build:
     context: .
     target: app
-    args:
-      VITE_APP_NAME:       ${APP_NAME:-Nonalix IA}
-      VITE_REVERB_APP_KEY: ${REVERB_APP_KEY:?REVERB_APP_KEY manquante}
-      VITE_REVERB_HOST:    ${NONALIX_DOMAIN_APP:?NONALIX_DOMAIN_APP manquant}
-      VITE_REVERB_PORT:    "443"
-      VITE_REVERB_SCHEME:  "https"
+    args: *vite-args
   env_file: [.env]
   volumes:
     # Seul l'état applicatif est persistant. Le code vient de l'image.
@@ -58,6 +67,7 @@ services:
     build:
       context: .
       target: web
+      args: *vite-args
     container_name: nonalix-web
     ports:
       # L'adresse 127.0.0.1 est délibérée : sans elle, Docker écrit une règle
