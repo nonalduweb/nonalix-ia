@@ -13,6 +13,7 @@ use App\Services\Audit\AuditLogger;
 use App\Notifications\InvitationNotification;
 use App\Services\Billing\QuotaService;
 use App\Services\Tenancy\RoleProvisioner;
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -36,6 +37,7 @@ class TenantController
         private readonly AuditLogger $audit,
         private readonly QuotaService $quotas,
         private readonly RoleProvisioner $roles,
+        private readonly TenantContext $context,
     ) {}
 
     public function index(Request $request): Response
@@ -69,8 +71,20 @@ class TenantController
 
     public function show(Tenant $tenant): Response
     {
+        // `subscriptions` est un modèle cloisonné, or l'administration
+        // travaille délibérément sans tenant courant : le scope global lève
+        // alors une exception, et l'écran renvoyait une erreur 500.
+        //
+        // runAs() plutôt que runWithout() : cadrer sur CE tenant rend une
+        // fuite inter-clients structurellement impossible, là où désactiver
+        // le cloisonnement exposerait les abonnements de tout le monde à la
+        // moindre erreur de requête. Le chargement passe par une relation,
+        // ce qui explique que le défaut soit passé inaperçu : il n'y a aucun
+        // constructeur de requête visible sur lequel poser withoutTenantScope.
+        $tenant = $this->context->runAs($tenant, fn () => $tenant->load('plan', 'subscriptions.plan'));
+
         return Inertia::render('Admin/Tenants/Show', [
-            'tenant' => $tenant->load('plan', 'subscriptions.plan'),
+            'tenant' => $tenant,
             'users'  => User::query()->ofTenant($tenant->id)->with('roles:id,name')->get(),
             'usage'  => collect(config('nonalix.quotas.metrics'))
                 ->mapWithKeys(fn (string $metric) => [$metric => [
