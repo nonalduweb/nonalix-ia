@@ -1,0 +1,45 @@
+# Nonalix IA — contexte de build.
+#
+# L'étape `app` du Dockerfile fait `COPY . .`. Sans ce fichier, l'image
+# embarquerait les secrets et des dépendances compilées pour le mauvais OS.
+
+# SECRETS — une image est distribuable, un .env ne doit jamais y entrer.
+.env
+.env.*
+!.env.example
+
+# Dépendances : réinstallées dans les étapes `vendor` et `assets`.
+# Le vendor de l'hôte est compilé pour Windows/glibc, pas pour Alpine.
+/vendor
+/node_modules
+
+# Assets : reconstruits par l'étape `assets`.
+/public/build
+/public/hot
+/public/storage
+
+# État local, jamais pertinent dans l'image.
+/storage/app/private/*
+/storage/app/public/*
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/logs/*
+/bootstrap/cache/*
+
+# Outillage et VCS.
+.git
+.gitignore
+/.phpunit.cache
+/.phpunit.result.cache
+/tests
+.php-cs-fixer.cache
+/.idea
+/.vscode
+.DS_Store
+Thumbs.db
+
+# Docker et documentation : inutiles au runtime.
+docker-compose*.yml
+Makefile
+*.md

@@ -1,0 +1,194 @@
+name: nonalix-ia
+
+# Nonalix IA — stack de production.
+#
+#   docker compose -f docker-compose.prod.yml up -d
+#
+# Fichier AUTONOME, et non une surcharge de docker-compose.yml : Compose
+# fusionne les volumes par chemin cible et ne sait pas *retirer* le bind mount
+# `.:/var/www/html` du fichier de développement. Or ce mount masquerait le code
+# et les assets compilés dans l'image — la production servirait les sources de
+# l'hôte avec un public/build absent.
+
+x-app: &app
+  image: nonalix/app:${IMAGE_TAG:-latest}
+  build:
+    context: .
+    target: app
+    args:
+      VITE_APP_NAME:       ${APP_NAME:-Nonalix IA}
+      VITE_REVERB_APP_KEY: ${REVERB_APP_KEY:?REVERB_APP_KEY manquante}
+      VITE_REVERB_HOST:    ${NONALIX_DOMAIN_APP:?NONALIX_DOMAIN_APP manquant}
+      VITE_REVERB_PORT:    "443"
+      VITE_REVERB_SCHEME:  "https"
+  env_file: [.env]
+  volumes:
+    # Seul l'état applicatif est persistant. Le code vient de l'image.
+    - storage:/var/www/html/storage
+  depends_on:
+    postgres: { condition: service_healthy }
+    redis:    { condition: service_healthy }
+  networks: [nonalix]
+  restart: unless-stopped
+  logging: &logging
+    driver: json-file
+    options: { max-size: "10m", max-file: "5" }
+
+services:
+  # -------------------------------------------------------------------------
+  # Application PHP-FPM — seul conteneur autorisé à migrer et à mettre en cache
+  # -------------------------------------------------------------------------
+  app:
+    <<: *app
+    container_name: nonalix-app
+    environment:
+      CONTAINER_ROLE: app
+      RUN_MIGRATIONS: "false"   # les migrations sont jouées par deploy.sh,
+                                # avant le basculement des conteneurs.
+
+  # -------------------------------------------------------------------------
+  # Serveur web — porte public/ (assets Vite) et termine le TLS
+  # -------------------------------------------------------------------------
+  web:
+    image: nonalix/web:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      target: web
+    container_name: nonalix-web
+    ports:
+      - "${HTTP_BIND:-0.0.0.0}:80:80"
+      - "${HTTPS_BIND:-0.0.0.0}:443:443"
+    volumes:
+      # sites-enabled : init-tls.sh y active le vhost HTTPS une fois le
+      # certificat émis. Nginx refuserait de démarrer avec un ssl_certificate
+      # pointant sur un fichier absent.
+      - ./docker/nginx/enabled:/etc/nginx/conf.d:ro
+      - letsencrypt:/etc/letsencrypt:ro
+      - certbot-www:/var/www/certbot:ro
+    depends_on: [app, reverb]
+    networks: [nonalix]
+    restart: unless-stopped
+    logging: *logging
+
+  # -------------------------------------------------------------------------
+  # Renouvellement TLS — tente un renouvellement deux fois par jour
+  # -------------------------------------------------------------------------
+  certbot:
+    image: certbot/certbot:latest
+    container_name: nonalix-certbot
+    volumes:
+      - letsencrypt:/etc/letsencrypt
+      - certbot-www:/var/www/certbot
+    # Let's Encrypt ne renouvelle qu'à 30 jours de l'expiration : ces passages
+    # sont des non-opérations la plupart du temps. L'heure est décalée pour
+    # éviter la minute pleine, où l'API est saturée.
+    entrypoint: >
+      sh -c "trap exit TERM;
+             while :; do certbot renew --webroot -w /var/www/certbot --quiet;
+             sleep 12h & wait $${!}; done"
+    networks: [nonalix]
+    restart: unless-stopped
+    logging: *logging
+
+  # -------------------------------------------------------------------------
+  # PostgreSQL + pgvector
+  # -------------------------------------------------------------------------
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: nonalix-postgres
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-nonalix}
+      POSTGRES_USER: ${DB_USERNAME:-nonalix}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD manquante}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    # Pas de `ports:` — la base n'est jointe que par le réseau Docker.
+    # Publier 5432 sur un VPS l'expose à Internet : Docker écrit ses propres
+    # règles DNAT dans iptables et court-circuite UFW.
+    expose: ["5432"]
+    volumes:
+      - postgres:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-nonalix} -d ${DB_DATABASE:-nonalix}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [nonalix]
+    restart: unless-stopped
+    logging: *logging
+
+  # -------------------------------------------------------------------------
+  # Redis — cache, sessions, queues, verrous, compteurs de quota
+  # -------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: nonalix-redis
+    # noeviction est impératif : sous pression mémoire, une politique
+    # d'éviction supprimerait des jobs en attente et des compteurs de quota.
+    command: >
+      redis-server --appendonly yes --maxmemory ${REDIS_MAXMEMORY:-1gb}
+      --maxmemory-policy noeviction
+    expose: ["6379"]
+    volumes:
+      - redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [nonalix]
+    restart: unless-stopped
+    logging: *logging
+
+  # -------------------------------------------------------------------------
+  # Workers Horizon
+  # -------------------------------------------------------------------------
+  horizon:
+    <<: *app
+    container_name: nonalix-horizon
+    environment:
+      CONTAINER_ROLE: horizon
+      RUN_MIGRATIONS: "false"
+    command: php artisan horizon
+    # SIGTERM laisse Horizon finir le job en cours ; 120 s couvre un appel IA
+    # lent. Au-delà, Docker envoie SIGKILL et le job est perdu.
+    stop_grace_period: 120s
+    healthcheck:
+      test: ["CMD", "php", "artisan", "horizon:status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # -------------------------------------------------------------------------
+  # Planificateur de tâches
+  # -------------------------------------------------------------------------
+  scheduler:
+    <<: *app
+    container_name: nonalix-scheduler
+    environment:
+      CONTAINER_ROLE: scheduler
+      RUN_MIGRATIONS: "false"
+    command: php artisan schedule:work
+
+  # -------------------------------------------------------------------------
+  # WebSocket temps réel
+  # -------------------------------------------------------------------------
+  reverb:
+    <<: *app
+    container_name: nonalix-reverb
+    environment:
+      CONTAINER_ROLE: reverb
+      RUN_MIGRATIONS: "false"
+    command: php artisan reverb:start --host=0.0.0.0 --port=8080
+    expose: ["8080"]
+
+volumes:
+  postgres:
+  redis:
+  storage:
+  letsencrypt:
+  certbot-www:
+
+networks:
+  nonalix:
+    driver: bridge

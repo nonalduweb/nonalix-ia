@@ -1,0 +1,31 @@
+# Le développement se fait sous Windows, l'exécution sous Linux (Alpine).
+# Sans ces règles, un script checkouté en CRLF échoue sur le VPS avec
+# « bad interpreter: /usr/bin/env bash^M », et un .env CRLF fait lire à PHP
+# des valeurs terminées par un retour chariot invisible.
+
+* text=auto eol=lf
+
+# Toujours LF : lus par un shell, PHP-FPM ou Nginx dans un conteneur Linux.
+*.sh          text eol=lf
+*.conf        text eol=lf
+*.ini         text eol=lf
+*.yml         text eol=lf
+*.yaml        text eol=lf
+*.php         text eol=lf
+*.env         text eol=lf
+.env.example  text eol=lf
+Dockerfile    text eol=lf
+Makefile      text eol=lf
+artisan       text eol=lf
+
+# Binaires : jamais de conversion.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.webp binary
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.pdf   binary

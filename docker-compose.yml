@@ -1,0 +1,150 @@
+name: nonalix-ia
+
+x-app: &app
+  build:
+    context: .
+    target: ${DOCKER_TARGET:-dev}
+  image: nonalix/app:${DOCKER_TARGET:-dev}
+  env_file: [.env]
+  volumes:
+    - .:/var/www/html
+    - vendor:/var/www/html/vendor
+  depends_on:
+    postgres: { condition: service_healthy }
+    redis:    { condition: service_healthy }
+  networks: [nonalix]
+  restart: unless-stopped
+
+services:
+  # -------------------------------------------------------------------------
+  # Application PHP-FPM
+  # -------------------------------------------------------------------------
+  app:
+    <<: *app
+    container_name: nonalix-app
+
+  # -------------------------------------------------------------------------
+  # Serveur web
+  # -------------------------------------------------------------------------
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: nonalix-nginx
+    ports:
+      - "${HTTP_PORT:-80}:80"
+    volumes:
+      - .:/var/www/html:ro
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on: [app, reverb]
+    networks: [nonalix]
+    restart: unless-stopped
+
+  # -------------------------------------------------------------------------
+  # PostgreSQL + pgvector
+  # -------------------------------------------------------------------------
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: nonalix-postgres
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-nonalix}
+      POSTGRES_USER: ${DB_USERNAME:-nonalix}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    ports:
+      - "${DB_PORT_EXTERNAL:-5432}:5432"
+    volumes:
+      - postgres:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-nonalix} -d ${DB_DATABASE:-nonalix}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [nonalix]
+    restart: unless-stopped
+
+  # -------------------------------------------------------------------------
+  # Redis — cache, sessions, queues, verrous, compteurs de quota
+  # -------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: nonalix-redis
+    command: >
+      redis-server --appendonly yes --maxmemory 512mb
+      --maxmemory-policy noeviction
+    volumes:
+      - redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [nonalix]
+    restart: unless-stopped
+
+  # -------------------------------------------------------------------------
+  # Workers Horizon
+  # -------------------------------------------------------------------------
+  horizon:
+    <<: *app
+    container_name: nonalix-horizon
+    command: php artisan horizon
+    healthcheck:
+      test: ["CMD", "php", "artisan", "horizon:status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # -------------------------------------------------------------------------
+  # Planificateur de tâches
+  # -------------------------------------------------------------------------
+  scheduler:
+    <<: *app
+    container_name: nonalix-scheduler
+    command: php artisan schedule:work
+
+  # -------------------------------------------------------------------------
+  # WebSocket temps réel
+  # -------------------------------------------------------------------------
+  reverb:
+    <<: *app
+    container_name: nonalix-reverb
+    command: php artisan reverb:start --host=0.0.0.0 --port=8080
+    expose: ["8080"]
+
+  # -------------------------------------------------------------------------
+  # Vite (développement uniquement) : docker compose --profile dev up
+  # -------------------------------------------------------------------------
+  vite:
+    image: node:22-alpine
+    container_name: nonalix-vite
+    profiles: [dev]
+    working_dir: /app
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    ports:
+      - "${VITE_PORT:-5173}:5173"
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+    networks: [nonalix]
+
+  # -------------------------------------------------------------------------
+  # Interface SMTP de test (développement uniquement)
+  # -------------------------------------------------------------------------
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: nonalix-mailpit
+    profiles: [dev]
+    ports:
+      - "${MAILPIT_PORT:-8025}:8025"
+    networks: [nonalix]
+
+volumes:
+  postgres:
+  redis:
+  vendor:
+  node_modules:
+
+networks:
+  nonalix:
+    driver: bridge

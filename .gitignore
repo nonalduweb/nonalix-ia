@@ -1,0 +1,48 @@
+# Dépendances
+/vendor
+/node_modules
+
+# Build front
+/public/build
+/public/hot
+/public/storage
+
+# Stockage applicatif
+/storage/*.key
+/storage/app/private/*
+!/storage/app/private/.gitignore
+/storage/app/public/*
+!/storage/app/public/.gitignore
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/logs/*
+/bootstrap/cache/*
+
+# SECRETS — ne doivent JAMAIS être commités.
+# Les jetons Meta, clés IA et APP_KEY vivent exclusivement ici.
+.env
+.env.*
+!.env.example
+!.env.production.example
+
+# Sauvegardes prises par deploy.sh avant migration (elles contiennent
+# l'intégralité de la base : jamais dans le dépôt).
+/storage/backups/
+
+# Outils
+/.phpunit.cache
+/.phpunit.result.cache
+.php-cs-fixer.cache
+/.idea
+/.vscode
+/.fleet
+.DS_Store
+Thumbs.db
+
+# Docker : surcharges locales
+docker-compose.override.yml
+
+# Vhosts Nginx actifs : composés par deploy/init-tls.sh depuis available/,
+# leur contenu dépend de l'état du certificat sur chaque serveur.
+/docker/nginx/enabled/
