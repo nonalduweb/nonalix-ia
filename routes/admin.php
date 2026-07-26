@@ -31,6 +31,11 @@ Route::middleware(['auth', '2fa', 'super-admin'])->group(function () {
         ->except(['create', 'edit'])
         ->names('admin.tenants');
 
+    // Une invitation se perd ou expire : sans ce renvoi, la seule issue
+    // serait de recréer l'entreprise.
+    Route::post('tenants/{tenant}/resend-invitation', [TenantController::class, 'resendInvitation'])
+        ->name('admin.tenants.resend-invitation');
+
     Route::post('tenants/{tenant}/suspend',   [TenantController::class, 'suspend'])->name('admin.tenants.suspend');
     Route::post('tenants/{tenant}/reactivate', [TenantController::class, 'reactivate'])->name('admin.tenants.reactivate');
     Route::put('tenants/{tenant}/plan',        [TenantController::class, 'changePlan'])->name('admin.tenants.plan');

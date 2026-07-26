@@ -6,12 +6,14 @@ namespace App\Http\Controllers\App\Settings;
 
 use App\Enums\UserStatus;
 use App\Models\User;
+use App\Notifications\InvitationNotification;
 use App\Services\Audit\AuditLogger;
 use App\Services\Tenancy\RoleProvisioner;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -91,8 +93,11 @@ class TeamUserController
             'after' => ['email' => $user->email, 'role' => $validated['role']],
         ]);
 
-        // TODO Phase 1.9 : envoi de l'invitation par e-mail.
-        return back()->with('success', "Invitation créée pour {$user->email}.");
+        // Sans cet envoi, l'invité ne peut jamais entrer : son mot de passe
+        // est aléatoire et le statut `invited` interdit la connexion.
+        $this->sendInvitation($user);
+
+        return back()->with('success', "Invitation envoyée à {$user->email}.");
     }
 
     public function update(Request $request, User $user): RedirectResponse
@@ -147,5 +152,31 @@ class TeamUserController
     private function roleFor(string $name): Role
     {
         return $this->roles->role($name);
+    }
+
+    /** Renvoie l'invitation à un membre encore en attente. */
+    public function resendInvitation(Request $request, User $user): RedirectResponse
+    {
+        abort_unless($request->user()->can('update', $user), 403);
+
+        if ($user->status !== UserStatus::Invited) {
+            return back()->with('success', 'Ce compte est déjà actif.');
+        }
+
+        $this->sendInvitation($user);
+
+        return back()->with('success', "Invitation renvoyée à {$user->email}.");
+    }
+
+    private function sendInvitation(User $user): void
+    {
+        // Émetteur `invitations` : sept jours, le temps qu'un équipier ouvre
+        // sa boîte. Une invitation expirée laisse un compte inaccessible.
+        $token = Password::broker('invitations')->createToken($user);
+
+        $user->notify(new InvitationNotification(
+            $token,
+            $this->context->current()?->name ?? 'votre entreprise',
+        ));
     }
 }

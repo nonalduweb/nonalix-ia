@@ -5,15 +5,18 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\TenantStatus;
+use App\Enums\UserStatus;
 use App\Models\Plan;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Audit\AuditLogger;
+use App\Notifications\InvitationNotification;
 use App\Services\Billing\QuotaService;
 use App\Services\Tenancy\RoleProvisioner;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -119,9 +122,14 @@ class TenantController
             'after' => ['name' => $tenant->name, 'owner' => $owner->email],
         ]);
 
+        // Sans cet envoi, le compte est inutilisable : son mot de passe est
+        // aléatoire et connu de personne, et le statut `invited` interdit la
+        // connexion. C'est la seule façon pour le propriétaire d'entrer.
+        $this->sendInvitation($owner, $tenant);
+
         return redirect()
             ->route('admin.tenants.show', $tenant)
-            ->with('success', 'Entreprise créée.');
+            ->with('success', "Entreprise créée. Invitation envoyée à {$owner->email}.");
     }
 
     public function update(Request $request, Tenant $tenant): RedirectResponse
@@ -218,5 +226,40 @@ class TenantController
         $tenant->delete();
 
         return redirect()->route('admin.tenants.index')->with('success', 'Entreprise supprimée.');
+    }
+
+    /**
+     * Renvoie l'invitation au propriétaire.
+     *
+     * Une invitation se perd, atterrit en indésirables, ou expire. Sans ce
+     * bouton, la seule issue serait de recréer l'entreprise.
+     */
+    public function resendInvitation(Tenant $tenant): RedirectResponse
+    {
+        $owner = $tenant->users()
+            ->where('status', UserStatus::Invited)
+            ->orderBy('created_at')
+            ->first();
+
+        if ($owner === null) {
+            return back()->with('success', 'Aucun compte en attente d\'invitation pour cette entreprise.');
+        }
+
+        $this->sendInvitation($owner, $tenant);
+
+        $this->audit->log('platform.invitation_resent', $owner, [
+            'after' => ['email' => $owner->email],
+        ]);
+
+        return back()->with('success', "Invitation renvoyée à {$owner->email}.");
+    }
+
+    private function sendInvitation(User $owner, Tenant $tenant): void
+    {
+        // Émetteur `invitations` : sept jours de validité, contre soixante
+        // minutes pour une réinitialisation ordinaire.
+        $token = Password::broker('invitations')->createToken($owner);
+
+        $owner->notify(new InvitationNotification($token, $tenant->name, isOwner: true));
     }
 }

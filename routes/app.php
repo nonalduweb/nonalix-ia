@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\App\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\App\Auth\EmailVerificationController;
+use App\Http\Controllers\App\Auth\InvitationController;
 use App\Http\Controllers\App\Auth\PasswordResetController;
 use App\Http\Controllers\App\Auth\RegisteredTenantController;
 use App\Http\Controllers\App\Auth\TwoFactorChallengeController;
@@ -65,6 +66,15 @@ Route::middleware('guest')->group(function () {
     Route::post('reset-password', [PasswordResetController::class, 'reset'])
         ->middleware('throttle:password-reset')
         ->name('password.update');
+
+    // --- Acceptation d'une invitation ------------------------------------------
+    // Séparé de la réinitialisation : l'émetteur `invitations` accorde sept
+    // jours, contre soixante minutes pour un mot de passe oublié.
+    Route::get('invitation/{token}', [InvitationController::class, 'show'])
+        ->name('invitation.accept');
+    Route::post('invitation', [InvitationController::class, 'accept'])
+        ->middleware('throttle:password-reset')
+        ->name('invitation.store');
 });
 
 // --- Vérification de l'adresse e-mail -----------------------------------------
@@ -153,5 +163,8 @@ Route::middleware(['auth', 'verified', '2fa', 'tenant'])->group(function () {
             ->name('whatsapp.sync-templates');
 
         Route::resource('users', TeamUserController::class)->except(['show', 'create', 'edit']);
+
+        Route::post('users/{user}/resend-invitation', [TeamUserController::class, 'resendInvitation'])
+            ->name('users.resend-invitation');
     });
 });

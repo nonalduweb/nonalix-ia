@@ -34,6 +34,11 @@ const suspend = () =>
 const reactivate = () =>
     router.post(`/tenants/${props.tenant.id}/reactivate`, {}, { preserveScroll: true });
 
+// Une invitation se perd ou expire : sans ce renvoi, un propriétaire qui n'a
+// jamais reçu son lien ne peut plus entrer du tout.
+const resendInvitation = () =>
+    router.post(`/tenants/${props.tenant.id}/resend-invitation`, {}, { preserveScroll: true });
+
 const changePlan = () =>
     planForm.put(`/tenants/${props.tenant.id}/plan`, { preserveScroll: true });
 
@@ -76,6 +81,9 @@ const formatDateTime = (iso) => (iso ? new Date(iso).toLocaleString('fr-FR') : '
                 <StatusBadge :status="tenant.status" />
                 <button class="btn-secondary text-sm" @click="impersonating = true">
                     Assistance
+                </button>
+                <button class="btn-secondary text-sm" @click="resendInvitation">
+                    Renvoyer l'invitation
                 </button>
                 <button
                     v-if="tenant.status !== 'suspended'"
