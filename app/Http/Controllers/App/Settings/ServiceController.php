@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\App\Settings;
 
+use App\Models\BusinessProfile;
 use App\Models\Service;
 use App\Services\Audit\AuditLogger;
 use Illuminate\Http\RedirectResponse;
@@ -29,6 +30,14 @@ class ServiceController
 
         return Inertia::render('Settings/Services', [
             'services' => Service::query()->orderBy('position')->orderBy('name')->get(),
+
+            // La devise d'une prestation suit celle de l'entreprise : la
+            // saisir à chaque création était une corvée, et un oubli faisait
+            // annoncer un prix dans la mauvaise monnaie par l'agent.
+            'defaultCurrency' => BusinessProfile::query()->value('currency')
+                ?? config('nonalix.defaults.currency'),
+
+            'currencies' => config('nonalix.currencies'),
         ]);
     }
 

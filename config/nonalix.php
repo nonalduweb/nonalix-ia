@@ -108,4 +108,41 @@ return [
         ],
         'embedding_batch_size' => 64,
     ],
+
+    /*
+    |---------------------------------------------------------------------------
+    | Valeurs par défaut d'une nouvelle entreprise
+    |---------------------------------------------------------------------------
+    |
+    | Le marché principal est l'Afrique de l'Ouest : proposer Europe/Paris et
+    | l'euro obligeait chaque client à corriger deux champs, et un fuseau
+    | erroné fait répondre l'agent « nous sommes fermés » aux mauvaises heures.
+    |
+    | Paramétrable : une implantation sur un autre marché change ces valeurs
+    | sans toucher au code.
+    */
+
+    'defaults' => [
+        'timezone' => env('NONALIX_DEFAULT_TIMEZONE', 'Africa/Abidjan'),
+        'currency' => env('NONALIX_DEFAULT_CURRENCY', 'XOF'),
+        'country'  => env('NONALIX_DEFAULT_COUNTRY', 'CI'),
+    ],
+
+    /*
+    |---------------------------------------------------------------------------
+    | Devises proposées
+    |---------------------------------------------------------------------------
+    */
+
+    'currencies' => [
+        'XOF' => 'XOF (FCFA)',
+        'XAF' => 'XAF (FCFA)',
+        'EUR' => 'EUR (€)',
+        'MAD' => 'MAD (dirham)',
+        'GHS' => 'GHS (cedi)',
+        'NGN' => 'NGN (naira)',
+        'USD' => 'USD ($)',
+        'CHF' => 'CHF',
+        'CAD' => 'CAD ($)',
+    ],
 ];

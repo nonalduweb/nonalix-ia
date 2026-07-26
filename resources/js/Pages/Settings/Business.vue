@@ -8,7 +8,9 @@ const props = defineProps({
     profile: { type: Object, default: null },
     hours: Array,
     days: Object,
-    timezones: Array,
+    timezoneGroups: Object,
+    currencies: Object,
+    defaults: Object,
 });
 
 const profileForm = useForm({
@@ -22,9 +24,11 @@ const profileForm = useForm({
     address_line2: props.profile?.address_line2 ?? '',
     postal_code: props.profile?.postal_code ?? '',
     city: props.profile?.city ?? '',
-    country: props.profile?.country ?? 'FR',
-    timezone: props.profile?.timezone ?? 'Europe/Paris',
-    currency: props.profile?.currency ?? 'EUR',
+    // Valeurs par défaut fournies par le serveur (config/nonalix.php) et non
+    // codées en dur ici : elles doivent suivre le marché servi.
+    country: props.profile?.country ?? props.defaults.country,
+    timezone: props.profile?.timezone ?? props.defaults.timezone,
+    currency: props.profile?.currency ?? props.defaults.currency,
 });
 
 // Secteurs proposés en suggestion, sans contraindre : le champ reste libre
@@ -143,7 +147,7 @@ const saveHours = () => {
                         type="text"
                         class="input"
                         required
-                        placeholder="Boulangerie Martin"
+                        placeholder="Boulangerie Kouassi"
                     />
                     <p class="mt-1 text-xs text-slate-500">
                         Le nom sous lequel l'agent se présentera à vos clients.
@@ -164,7 +168,7 @@ const saveHours = () => {
                         rows="4"
                         class="input resize-none"
                         maxlength="2000"
-                        placeholder="Boulangerie artisanale à Lyon. Pains au levain, viennoiseries, sandwichs le midi. Commandes de pièces montées sur demande, 48 h à l'avance."
+                        placeholder="Boulangerie artisanale à Cocody. Pains, viennoiseries et sandwichs le midi. Commandes de pièces montées sur demande, 48 h à l'avance."
                     />
                     <div class="mt-1 flex items-start justify-between gap-3">
                         <p class="text-xs text-slate-500">
@@ -204,7 +208,7 @@ const saveHours = () => {
                             v-model="profileForm.phone"
                             type="tel"
                             class="input"
-                            placeholder="+33 4 78 00 00 00"
+                            placeholder="+225 07 00 00 00 00"
                         />
                         <p class="mt-1 text-xs text-slate-500">Communiqué sur demande.</p>
                     </div>
@@ -215,7 +219,7 @@ const saveHours = () => {
                             v-model="profileForm.email"
                             type="email"
                             class="input"
-                            placeholder="contact@exemple.fr"
+                            placeholder="contact@exemple.ci"
                         />
                         <p v-if="profileForm.errors.email" class="mt-1 text-sm text-red-600">
                             {{ profileForm.errors.email }}
@@ -228,7 +232,7 @@ const saveHours = () => {
                             v-model="profileForm.website"
                             type="url"
                             class="input"
-                            placeholder="https://exemple.fr"
+                            placeholder="https://exemple.ci"
                         />
                         <p v-if="profileForm.errors.website" class="mt-1 text-sm text-red-600">
                             {{ profileForm.errors.website }}
@@ -243,7 +247,7 @@ const saveHours = () => {
                         v-model="profileForm.address_line1"
                         type="text"
                         class="input"
-                        placeholder="12 rue de la République"
+                        placeholder="Rue des Jardins, Cocody"
                     />
                     <p class="mt-1 text-xs text-slate-500">
                         Facultatif, mais l'agent pourra indiquer où vous trouver.
@@ -258,7 +262,7 @@ const saveHours = () => {
                             v-model="profileForm.postal_code"
                             type="text"
                             class="input"
-                            placeholder="69001"
+                            placeholder="01 BP 1234"
                         />
                     </div>
                     <div class="col-span-2">
@@ -268,7 +272,7 @@ const saveHours = () => {
                             v-model="profileForm.city"
                             type="text"
                             class="input"
-                            placeholder="Lyon"
+                            placeholder="Abidjan"
                         />
                     </div>
                 </div>
@@ -277,7 +281,9 @@ const saveHours = () => {
                     <div>
                         <label class="label" for="timezone">Fuseau horaire</label>
                         <select id="timezone" v-model="profileForm.timezone" class="input">
-                            <option v-for="tz in timezones" :key="tz" :value="tz">{{ tz }}</option>
+                            <optgroup v-for="(zones, continent) in timezoneGroups" :key="continent" :label="continent">
+                                <option v-for="tz in zones" :key="tz" :value="tz">{{ tz }}</option>
+                            </optgroup>
                         </select>
                         <!-- Le fuseau détermine si l'agent considère l'entreprise
                              ouverte ou fermée au moment où il répond. -->
@@ -288,11 +294,9 @@ const saveHours = () => {
                     <div>
                         <label class="label" for="currency">Devise</label>
                         <select id="currency" v-model="profileForm.currency" class="input">
-                            <option value="EUR">EUR (€)</option>
-                            <option value="CHF">CHF</option>
-                            <option value="XOF">XOF (FCFA)</option>
-                            <option value="MAD">MAD (dirham)</option>
-                            <option value="USD">USD ($)</option>
+                            <option v-for="(label, code) in currencies" :key="code" :value="code">
+                                {{ label }}
+                            </option>
                         </select>
                         <p class="mt-1 text-xs text-slate-500">Utilisée pour annoncer vos tarifs.</p>
                     </div>

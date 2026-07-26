@@ -25,8 +25,24 @@ class BusinessProfileController
             'profile' => BusinessProfile::query()->first(),
             'hours'   => BusinessHour::query()->orderBy('day_of_week')->orderBy('opens_at')->get(),
             'days'    => BusinessHour::DAYS,
-            'timezones' => \DateTimeZone::listIdentifiers(\DateTimeZone::EUROPE)
-                + \DateTimeZone::listIdentifiers(\DateTimeZone::AFRICA),
+
+            // Groupés par continent : une liste à plat de plus de cent entrées
+            // se parcourt mal, et l'Afrique doit être immédiatement visible.
+            'timezoneGroups' => [
+                'Afrique' => \DateTimeZone::listIdentifiers(\DateTimeZone::AFRICA),
+                'Europe'  => \DateTimeZone::listIdentifiers(\DateTimeZone::EUROPE),
+                'Amérique' => \DateTimeZone::listIdentifiers(\DateTimeZone::AMERICA),
+                'Asie'    => \DateTimeZone::listIdentifiers(\DateTimeZone::ASIA),
+            ],
+
+            'currencies' => config('nonalix.currencies'),
+
+            // Valeurs proposées à une entreprise qui n'a encore rien saisi.
+            'defaults' => [
+                'timezone' => config('nonalix.defaults.timezone'),
+                'currency' => config('nonalix.defaults.currency'),
+                'country'  => config('nonalix.defaults.country'),
+            ],
         ]);
     }
 

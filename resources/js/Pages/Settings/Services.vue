@@ -6,8 +6,10 @@ import SettingsNav from '@/Components/SettingsNav.vue';
 import Modal from '@/Components/Modal.vue';
 import EmptyState from '@/Components/EmptyState.vue';
 
-defineProps({
+const props = defineProps({
     services: Array,
+    defaultCurrency: String,
+    currencies: Object,
 });
 
 const editing = ref(null);
@@ -25,7 +27,10 @@ const form = useForm({
     description: '',
     price_cents: null,
     price_type: 'fixed',
-    currency: 'EUR',
+    // Suit la devise de l'entreprise : la saisir à chaque prestation était
+    // une corvée, et un oubli faisait annoncer un prix en euros à un client
+    // facturé en francs CFA.
+    currency: props.defaultCurrency,
     duration_minutes: null,
     category: '',
     is_active: true,
