@@ -7,6 +7,7 @@ namespace App\Http\Controllers\App\Settings;
 use App\Enums\UserStatus;
 use App\Models\User;
 use App\Services\Audit\AuditLogger;
+use App\Services\Tenancy\RoleProvisioner;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -31,6 +32,7 @@ class TeamUserController
     public function __construct(
         private readonly AuditLogger $audit,
         private readonly TenantContext $context,
+        private readonly RoleProvisioner $roles,
     ) {}
 
     public function index(Request $request): Response
@@ -135,9 +137,15 @@ class TeamUserController
         return back()->with('success', 'Utilisateur retiré.');
     }
 
-    /** Récupère (ou crée) le rôle dans le périmètre du tenant courant. */
+    /**
+     * Récupère (ou crée) le rôle dans le périmètre du tenant courant.
+     *
+     * Passe par le provisionneur : un `Role::findOrCreate()` nu rendrait un
+     * rôle sans aucune permission, et le membre invité se heurterait à des
+     * 403 partout tout en portant le bon rôle.
+     */
     private function roleFor(string $name): Role
     {
-        return Role::findOrCreate($name, 'web');
+        return $this->roles->role($name);
     }
 }

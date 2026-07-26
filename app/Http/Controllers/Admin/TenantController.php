@@ -10,6 +10,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Audit\AuditLogger;
 use App\Services\Billing\QuotaService;
+use App\Services\Tenancy\RoleProvisioner;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -31,6 +32,7 @@ class TenantController
     public function __construct(
         private readonly AuditLogger $audit,
         private readonly QuotaService $quotas,
+        private readonly RoleProvisioner $roles,
     ) {}
 
     public function index(Request $request): Response
@@ -104,9 +106,13 @@ class TenantController
             'status'    => \App\Enums\UserStatus::Invited,
         ]);
 
-        // Les rôles sont cloisonnés par tenant : on force le contexte le temps
-        // de l'attribution, faute de quoi le rôle serait créé côté plateforme.
-        app(\Spatie\Permission\PermissionRegistrar::class)->setPermissionsTeamId($tenant->id);
+        // Les rôles sont cloisonnés par tenant : le provisionnement force le
+        // contexte, faute de quoi les rôles seraient créés côté plateforme.
+        //
+        // Les quatre rôles sont créés d'emblée, et non le seul `owner` :
+        // l'entreprise pourra inviter un `admin` ou un `agent` sans qu'un rôle
+        // vide soit fabriqué au passage.
+        $this->roles->provisionAll($tenant->id);
         $owner->assignRole(\Spatie\Permission\Models\Role::findOrCreate('owner', 'web'));
 
         $this->audit->log('platform.tenant_created', $tenant, [
