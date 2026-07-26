@@ -8,6 +8,7 @@ use App\Services\Audit\AuditLogger;
 use App\Support\Domain;
 use Closure;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -51,9 +52,13 @@ class EnsureSuperAdmin
         // explication. L'accès reste refusé et tracé : la sécurité est
         // identique, seule l'issue change.
         if ($user->tenant_id !== null) {
-            return redirect()
-                ->away(Domain::app())
-                ->with('error', "Cet espace est réservé à l'équipe Nonalix. Vous avez été redirigé vers votre tableau de bord.");
+            // Le message de session est posé séparément : Inertia::location()
+            // ne renvoie pas un RedirectResponse et n'expose donc pas ->with().
+            // Un 302 inter-domaines, lui, serait avalé en silence par le XHR
+            // d'Inertia et laisserait l'utilisateur sur une page figée.
+            session()->flash('error', "Cet espace est réservé à l'équipe Nonalix. Vous avez été redirigé vers votre tableau de bord.");
+
+            return Inertia::location(Domain::app());
         }
 
         // Compte sans tenant et sans privilège plateforme : état incohérent,

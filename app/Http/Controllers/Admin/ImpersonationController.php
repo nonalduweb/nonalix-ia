@@ -9,8 +9,10 @@ use App\Models\User;
 use App\Services\Audit\AuditLogger;
 use App\Support\Domain;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Response as HttpResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 
 /**
  * Impersonation de support.
@@ -28,7 +30,7 @@ class ImpersonationController
 {
     public function __construct(private readonly AuditLogger $audit) {}
 
-    public function start(Request $request, Tenant $tenant): RedirectResponse
+    public function start(Request $request, Tenant $tenant): RedirectResponse|HttpResponse
     {
         $validated = $request->validate([
             'reason'  => ['required', 'string', 'min:10', 'max:500'],
@@ -73,10 +75,12 @@ class ImpersonationController
             'auth.two_factor_verified'       => true,
         ]);
 
-        return redirect()->away(Domain::app());
+        // Déclenché par un bouton depuis l'administration, donc en XHR : un
+        // 302 vers app.* ne provoquerait aucune navigation visible.
+        return Inertia::location(Domain::app());
     }
 
-    public function stop(Request $request): RedirectResponse
+    public function stop(Request $request): RedirectResponse|HttpResponse
     {
         $originalId = $request->session()->pull('impersonation.original_user_id');
 
@@ -106,6 +110,6 @@ class ImpersonationController
             'impersonator_id' => $original->id,
         ]);
 
-        return redirect()->away(Domain::admin());
+        return Inertia::location(Domain::admin());
     }
 }

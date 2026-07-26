@@ -8,6 +8,7 @@ use App\Services\Tenancy\TenantContext;
 use App\Support\Domain;
 use Closure;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -33,8 +34,13 @@ class ResolveTenant
 
         // Un super-admin n'a pas de tenant : il n'a rien à faire sur les
         // routes clientes. Le rediriger vers son espace évite un 500 obscur.
+        //
+        // Inertia::location() : un 302 vers un autre domaine est suivi en
+        // silence par le XHR d'Inertia, qui reçoit du HTML étranger et
+        // n'agit pas. Le 409 + X-Inertia-Location est le seul contrat qui
+        // provoque une navigation réelle.
         if ($user->isSuperAdmin()) {
-            return redirect()->away(Domain::admin());
+            return Inertia::location(Domain::admin());
         }
 
         $tenant = $user->tenant;

@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\Audit\AuditLogger;
 use App\Support\Domain;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Response as HttpResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
@@ -23,7 +24,9 @@ class AuthenticatedSessionController
         return Inertia::render('Auth/Login');
     }
 
-    public function store(Request $request): RedirectResponse
+    // Type de retour élargi : Inertia::location() renvoie une réponse 409
+    // porteuse de X-Inertia-Location, pas un RedirectResponse.
+    public function store(Request $request): RedirectResponse|HttpResponse
     {
         $credentials = $request->validate([
             'email'    => ['required', 'email', 'max:190'],
@@ -74,8 +77,16 @@ class AuthenticatedSessionController
 
         // Un super-admin est renvoyé vers son propre domaine : l'espace client
         // n'a aucun sens pour lui (il n'a pas de tenant).
+        //
+        // Inertia::location() et NON redirect()->away() : le formulaire est
+        // envoyé en XHR, et un 302 vers un autre domaine est suivi en silence
+        // par le navigateur. Inertia reçoit alors du HTML qu'il ne sait pas
+        // interpréter et ne fait RIEN — la page reste figée, sans erreur.
+        // Inertia::location() répond 409 + X-Inertia-Location, seul contrat
+        // qui déclenche une vraie navigation. Hors contexte Inertia, la
+        // méthode retombe d'elle-même sur une redirection classique.
         if ($user->isSuperAdmin()) {
-            return redirect()->away(Domain::admin());
+            return Inertia::location(Domain::admin());
         }
 
         return redirect()->intended(route('dashboard'));
