@@ -10,7 +10,7 @@ use App\Models\User;
  * Les tarifs saisis ici sont ceux que l'agent IA annonce aux clients :
  * leur modification est réservée à l'encadrement.
  */
-class ServicePolicy extends TenantPolicy
+class ServicePolicy extends TenantScopedPolicy
 {
     protected function resource(): string
     {

@@ -82,6 +82,38 @@ class AppServiceProvider extends ServiceProvider
         // Import de documents : coûteux en CPU et en appels d'embeddings.
         RateLimiter::for('uploads', fn (Request $request) => Limit::perHour(60)
             ->by($request->user()?->tenant_id ?: $request->ip()));
+
+        // Vérification d'un code d'accès : c'est la seule porte d'entrée vers
+        // la création d'un compte, donc la cible naturelle d'une recherche par
+        // essais. Un code fait 12 caractères sur un alphabet de 32 ; ce plafond
+        // rend l'exploration inatteignable en pratique.
+        RateLimiter::for('access-code', fn (Request $request) => [
+            Limit::perMinute(10)->by($request->ip()),
+            Limit::perHour(60)->by($request->ip()),
+        ]);
+
+        // Inscription : plus stricte encore, chaque tentative aboutie créant
+        // une entreprise et consommant un code.
+        RateLimiter::for('register', fn (Request $request) => [
+            Limit::perMinute(3)->by($request->ip()),
+            Limit::perHour(10)->by($request->ip()),
+        ]);
+
+        // Réinitialisation : la clé combine adresse et IP, comme la connexion.
+        // Sans le volet adresse, un attaquant pourrait inonder la boîte d'un
+        // tiers depuis plusieurs IP.
+        RateLimiter::for('password-reset', function (Request $request) {
+            $email = mb_strtolower((string) $request->input('email'));
+
+            return [
+                Limit::perMinute(3)->by($email.'|'.$request->ip()),
+                Limit::perHour(10)->by($request->ip()),
+            ];
+        });
+
+        // Renvoi et validation du lien de confirmation d'adresse.
+        RateLimiter::for('verification', fn (Request $request) => Limit::perMinute(6)
+            ->by($request->user()?->id ?: $request->ip()));
     }
 
     private function configureUrls(): void

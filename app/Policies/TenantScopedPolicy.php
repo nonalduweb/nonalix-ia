@@ -19,7 +19,7 @@ use Illuminate\Database\Eloquent\Model;
  * son rôle. C'est la deuxième barrière après le scope global — si l'une des
  * deux cède, l'autre tient.
  */
-abstract class TenantPolicy
+abstract class TenantScopedPolicy
 {
     /** Préfixe des permissions, ex. `conversations`. */
     abstract protected function resource(): string;

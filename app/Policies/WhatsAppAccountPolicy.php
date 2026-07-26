@@ -12,7 +12,7 @@ use App\Models\WhatsAppAccount;
  * réservée aux rôles `owner` et `admin`. Un opérateur qui pourrait modifier
  * le jeton d'accès pourrait détourner le numéro de l'entreprise.
  */
-class WhatsAppAccountPolicy extends TenantPolicy
+class WhatsAppAccountPolicy extends TenantScopedPolicy
 {
     protected function resource(): string
     {

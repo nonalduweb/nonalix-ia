@@ -6,6 +6,8 @@ namespace App\Models;
 
 use App\Enums\UserStatus;
 use App\Models\Concerns\HasUuidPrimaryKey;
+use App\Notifications\ResetPasswordNotification;
+use App\Notifications\VerifyEmailNotification;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -112,6 +114,20 @@ class User extends Authenticatable implements MustVerifyEmail
     public function canAuthenticate(): bool
     {
         return $this->status->canAuthenticate();
+    }
+
+    // -- Notifications d'authentification --------------------------------------
+    // Les notifications par défaut de Laravel sont en anglais et signées
+    // « Laravel ». Elles sont les premiers messages qu'un client reçoit.
+
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new VerifyEmailNotification());
+    }
+
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new ResetPasswordNotification($token));
     }
 
     public function getAvatarUrlAttribute(): ?string

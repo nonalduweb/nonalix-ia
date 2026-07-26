@@ -7,7 +7,7 @@ namespace App\Policies;
 use App\Models\Document;
 use App\Models\User;
 
-class DocumentPolicy extends TenantPolicy
+class DocumentPolicy extends TenantScopedPolicy
 {
     protected function resource(): string
     {

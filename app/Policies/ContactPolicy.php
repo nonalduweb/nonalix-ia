@@ -7,7 +7,7 @@ namespace App\Policies;
 use App\Models\Contact;
 use App\Models\User;
 
-class ContactPolicy extends TenantPolicy
+class ContactPolicy extends TenantScopedPolicy
 {
     protected function resource(): string
     {

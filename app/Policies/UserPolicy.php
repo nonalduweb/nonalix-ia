@@ -14,7 +14,7 @@ use App\Models\User;
  *     (on ne se verrouille pas hors de son entreprise par accident) ;
  *   - seul un `owner` peut agir sur un autre `owner`.
  */
-class UserPolicy extends TenantPolicy
+class UserPolicy extends TenantScopedPolicy
 {
     protected function resource(): string
     {

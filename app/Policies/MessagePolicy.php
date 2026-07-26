@@ -12,7 +12,7 @@ use App\Models\User;
  * ne se modifient ni ne se suppriment. Réécrire l'historique d'une
  * conversation client n'a aucun cas d'usage légitime.
  */
-class MessagePolicy extends TenantPolicy
+class MessagePolicy extends TenantScopedPolicy
 {
     protected function resource(): string
     {

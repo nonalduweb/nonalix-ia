@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Policies;
 
-class LeadPolicy extends TenantPolicy
+class LeadPolicy extends TenantScopedPolicy
 {
     protected function resource(): string
     {

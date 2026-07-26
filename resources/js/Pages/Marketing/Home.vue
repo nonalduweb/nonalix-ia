@@ -4,6 +4,7 @@ import MarketingLayout from '@/Layouts/MarketingLayout.vue';
 
 defineProps({
     appUrl: String,
+    registerUrl: String,
 });
 
 const steps = [
@@ -58,7 +59,7 @@ const guarantees = [
             </p>
 
             <div class="mt-10 flex flex-wrap justify-center gap-4">
-                <a :href="appUrl" class="btn-primary px-6 py-3 text-base">Démarrer l'essai</a>
+                <a :href="registerUrl" class="btn-primary px-6 py-3 text-base">Démarrer l'essai</a>
                 <Link href="/tarifs" class="btn-secondary px-6 py-3 text-base">Voir les tarifs</Link>
             </div>
 
@@ -105,9 +106,12 @@ const guarantees = [
                     La configuration prend une quinzaine de minutes. Vous gardez le
                     contrôle de votre compte Meta du début à la fin.
                 </p>
-                <a :href="appUrl" class="btn-primary mt-8 inline-flex px-6 py-3 text-base">
-                    Créer un compte
+                <a :href="registerUrl" class="btn-primary mt-8 inline-flex px-6 py-3 text-base">
+                    Créer mon entreprise
                 </a>
+                <p class="mt-3 text-sm text-slate-500">
+                    Un code d'accès est nécessaire. Écrivez-nous pour l'obtenir.
+                </p>
             </div>
         </section>
     </MarketingLayout>

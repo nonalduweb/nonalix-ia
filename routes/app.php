@@ -1,6 +1,9 @@
 <?php
 
 use App\Http\Controllers\App\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\App\Auth\EmailVerificationController;
+use App\Http\Controllers\App\Auth\PasswordResetController;
+use App\Http\Controllers\App\Auth\RegisteredTenantController;
 use App\Http\Controllers\App\Auth\TwoFactorChallengeController;
 use App\Http\Controllers\App\Auth\TwoFactorSetupController;
 use App\Http\Controllers\App\ContactController;
@@ -37,6 +40,49 @@ Route::middleware('guest')->group(function () {
         ->name('two-factor.challenge');
     Route::post('two-factor-challenge', [TwoFactorChallengeController::class, 'store'])
         ->middleware('throttle:two-factor');
+
+    // --- Inscription d'une entreprise, sur code d'accès ------------------------
+    // Fermée par défaut : sans code valide, aucun compte n'est créé. Le
+    // throttling est indispensable — sans lui, le code serait devinable par
+    // essais successifs.
+    Route::get('register',  [RegisteredTenantController::class, 'create'])->name('register');
+    Route::post('register', [RegisteredTenantController::class, 'store'])
+        ->middleware('throttle:register');
+
+    Route::post('register/check-code', [RegisteredTenantController::class, 'checkCode'])
+        ->middleware('throttle:access-code')
+        ->name('register.check-code');
+
+    // --- Mot de passe oublié ---------------------------------------------------
+    Route::get('forgot-password',  [PasswordResetController::class, 'requestForm'])
+        ->name('password.request');
+    Route::post('forgot-password', [PasswordResetController::class, 'sendLink'])
+        ->middleware('throttle:password-reset')
+        ->name('password.email');
+
+    Route::get('reset-password/{token}', [PasswordResetController::class, 'resetForm'])
+        ->name('password.reset');
+    Route::post('reset-password', [PasswordResetController::class, 'reset'])
+        ->middleware('throttle:password-reset')
+        ->name('password.update');
+});
+
+// --- Vérification de l'adresse e-mail -----------------------------------------
+// Authentifié mais PAS encore vérifié : ces routes doivent rester joignables
+// avant la barrière `verified`, sinon l'utilisateur ne pourrait jamais la
+// franchir. La 2FA n'est pas exigée ici non plus : on ne demande pas de
+// configurer un second facteur avant d'avoir confirmé l'adresse.
+Route::middleware('auth')->group(function () {
+    Route::get('email/verify', [EmailVerificationController::class, 'notice'])
+        ->name('verification.notice');
+
+    Route::get('email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
+        ->middleware(['signed', 'throttle:verification'])
+        ->name('verification.verify');
+
+    Route::post('email/verification-notification', [EmailVerificationController::class, 'resend'])
+        ->middleware('throttle:verification')
+        ->name('verification.send');
 });
 
 Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
@@ -44,7 +90,7 @@ Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
     ->name('logout');
 
 // --- Configuration de la 2FA (avant qu'elle ne soit exigée) -------------------
-Route::middleware('auth')->prefix('two-factor')->as('two-factor.')->group(function () {
+Route::middleware(['auth', 'verified'])->prefix('two-factor')->as('two-factor.')->group(function () {
     Route::get('setup',      [TwoFactorSetupController::class, 'show'])->name('setup');
     Route::post('enable',    [TwoFactorSetupController::class, 'enable'])->name('enable');
     Route::post('confirm',   [TwoFactorSetupController::class, 'confirm'])->name('confirm');
@@ -52,7 +98,11 @@ Route::middleware('auth')->prefix('two-factor')->as('two-factor.')->group(functi
 });
 
 // --- Espace authentifié --------------------------------------------------------
-Route::middleware(['auth', '2fa', 'tenant'])->group(function () {
+// `verified` précède `2fa` : confirmer l'adresse d'abord, puis le second
+// facteur. Dans l'autre sens, un client se verrait imposer la configuration
+// d'une application d'authentification avant même d'avoir prouvé qu'il
+// contrôle l'adresse par laquelle il récupérera son compte.
+Route::middleware(['auth', 'verified', '2fa', 'tenant'])->group(function () {
 
     Route::get('/', DashboardController::class)->name('dashboard');
 

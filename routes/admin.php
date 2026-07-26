@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AccessCodeController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ImpersonationController;
@@ -46,6 +47,17 @@ Route::middleware(['auth', '2fa', 'super-admin'])->group(function () {
     Route::resource('plans', PlanController::class)
         ->except(['create', 'edit'])
         ->names('admin.plans');
+
+    // --- Codes d'accès ----------------------------------------------------------
+    // Seul levier d'ouverture de compte : sans code émis ici, personne ne peut
+    // créer d'entreprise sur la plateforme.
+    Route::get('access-codes',  [AccessCodeController::class, 'index'])->name('admin.access-codes.index');
+    Route::post('access-codes', [AccessCodeController::class, 'store'])->name('admin.access-codes.store');
+
+    // Révocation et non suppression : le code doit rester lisible dans le
+    // journal d'audit et dans les consommations déjà enregistrées.
+    Route::post('access-codes/{accessCode}/revoke', [AccessCodeController::class, 'revoke'])
+        ->name('admin.access-codes.revoke');
 
     // --- Exploitation -----------------------------------------------------------
     Route::get('usage',              UsageController::class)->name('admin.usage');

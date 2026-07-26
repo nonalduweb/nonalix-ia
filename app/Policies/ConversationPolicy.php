@@ -7,7 +7,7 @@ namespace App\Policies;
 use App\Models\Conversation;
 use App\Models\User;
 
-class ConversationPolicy extends TenantPolicy
+class ConversationPolicy extends TenantScopedPolicy
 {
     protected function resource(): string
     {

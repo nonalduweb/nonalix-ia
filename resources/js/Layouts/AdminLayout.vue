@@ -8,6 +8,7 @@ const user = computed(() => page.props.auth?.user);
 const navigation = [
     { label: 'Vue d\'ensemble', href: '/' },
     { label: 'Entreprises', href: '/tenants' },
+    { label: 'Codes d\'accès', href: '/access-codes' },
     { label: 'Plans', href: '/plans' },
     { label: 'Consommation', href: '/usage' },
     { label: 'Incidents', href: '/incidents' },

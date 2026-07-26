@@ -10,7 +10,7 @@ use App\Models\User;
  * La configuration de l'agent détermine ce que l'entreprise dit à ses clients :
  * modifier le prompt est un acte d'encadrement, pas une action d'opérateur.
  */
-class AgentPolicy extends TenantPolicy
+class AgentPolicy extends TenantScopedPolicy
 {
     protected function resource(): string
     {

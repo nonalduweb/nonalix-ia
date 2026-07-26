@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Marketing;
 
 use App\Models\Plan;
+use App\Support\Domain;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -13,7 +14,10 @@ class PageController
     public function home(): Response
     {
         return Inertia::render('Marketing/Home', [
-            'appUrl' => 'https://'.config('nonalix.domains.app'),
+            // Domain::app() déduit le schéma de la requête : « https:// » en
+            // dur renvoyait le développement local vers un port TLS muet.
+            'appUrl'      => Domain::app(),
+            'registerUrl' => Domain::app('register'),
         ]);
     }
 

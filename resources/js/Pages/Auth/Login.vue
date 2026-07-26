@@ -1,5 +1,5 @@
 <script setup>
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm } from '@inertiajs/vue3';
 
 const form = useForm({
     email: '',
@@ -64,6 +64,16 @@ const submit = () => {
                 <button type="submit" class="btn-primary w-full" :disabled="form.processing">
                     {{ form.processing ? 'Connexion…' : 'Se connecter' }}
                 </button>
+
+                <div class="space-y-1 pt-1 text-center text-sm text-slate-500">
+                    <p>
+                        <Link href="/forgot-password" class="underline">Mot de passe oublié ?</Link>
+                    </p>
+                    <p>
+                        Vous avez un code d'accès ?
+                        <Link href="/register" class="underline">Créer mon entreprise</Link>
+                    </p>
+                </div>
             </form>
         </div>
     </div>
