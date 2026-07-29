@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AccessCodeController;
+use App\Http\Controllers\Admin\AccessRequestController as AdminAccessRequestController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\App\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Admin\DashboardController;
@@ -61,6 +62,18 @@ Route::middleware(['auth', '2fa', 'super-admin'])->group(function () {
     Route::resource('plans', PlanController::class)
         ->except(['create', 'edit'])
         ->names('admin.plans');
+
+    // --- Demandes d'accès -------------------------------------------------------
+    // File d'entrée du parcours commercial : approuver génère le code ET
+    // l'envoie, pour qu'aucun code ne reste émis sans destinataire.
+    Route::get('access-requests', [AdminAccessRequestController::class, 'index'])
+        ->name('admin.access-requests.index');
+    Route::post('access-requests/{accessRequest}/approve', [AdminAccessRequestController::class, 'approve'])
+        ->name('admin.access-requests.approve');
+    Route::post('access-requests/{accessRequest}/reject', [AdminAccessRequestController::class, 'reject'])
+        ->name('admin.access-requests.reject');
+    Route::post('access-requests/{accessRequest}/resend', [AdminAccessRequestController::class, 'resend'])
+        ->name('admin.access-requests.resend');
 
     // --- Codes d'accès ----------------------------------------------------------
     // Seul levier d'ouverture de compte : sans code émis ici, personne ne peut

@@ -114,6 +114,14 @@ class AppServiceProvider extends ServiceProvider
         // Renvoi et validation du lien de confirmation d'adresse.
         RateLimiter::for('verification', fn (Request $request) => Limit::perMinute(6)
             ->by($request->user()?->id ?: $request->ip()));
+
+        // Demande d'accès : formulaire public, sans authentification. Le
+        // plafond est bas — un prospect ne dépose qu'une demande, et une
+        // rafale ne peut être qu'un robot ou une nuisance.
+        RateLimiter::for('access-request', fn (Request $request) => [
+            Limit::perMinute(2)->by($request->ip()),
+            Limit::perDay(10)->by($request->ip()),
+        ]);
     }
 
     private function configureUrls(): void

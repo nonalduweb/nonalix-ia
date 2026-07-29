@@ -1,18 +1,11 @@
 <script setup>
-import { computed } from 'vue';
-import { Head, usePage } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 import MarketingLayout from '@/Layouts/MarketingLayout.vue';
 import { formatMoney } from '@/money';
 
 defineProps({
     plans: Array,
 });
-
-const page = usePage();
-
-const registerUrl = computed(
-    () => `https://${page.props.domains?.app ?? 'app.nonalixia.com'}/register`,
-);
 
 const QUOTA_LABELS = {
     messages_sent: 'Messages envoyés',
@@ -111,13 +104,13 @@ const FAQ = [
                         </span>
                     </p>
 
-                    <a
-                        :href="registerUrl"
+                    <Link
+                        :href="`/demande?plan=${plan.slug}`"
                         class="mt-6 w-full"
                         :class="plan.slug === 'business' ? 'btn-ink' : 'btn-secondary'"
                     >
-                        Commencer
-                    </a>
+                        Demander un accès
+                    </Link>
 
                     <dl class="mt-7 space-y-2.5 border-t border-slate-100 pt-6 text-sm">
                         <div
@@ -148,8 +141,8 @@ const FAQ = [
 
             <p class="mt-6 text-sm text-slate-500">
                 Un code d'accès est nécessaire pour ouvrir un compte.
-                <a :href="registerUrl" class="font-medium text-slate-900 underline">Écrivez-nous</a>
-                pour l'obtenir.
+                <Link href="/demande" class="font-medium text-slate-900 underline">Demandez le vôtre</Link>,
+                réponse sous 24 h ouvrées.
             </p>
         </section>
 

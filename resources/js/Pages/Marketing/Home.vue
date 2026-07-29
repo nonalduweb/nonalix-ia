@@ -61,7 +61,7 @@ const guarantees = [
             </p>
 
             <div class="mt-10 flex flex-wrap items-center gap-3">
-                <a :href="registerUrl" class="btn-ink px-6 py-3 text-base">Commencer</a>
+                <Link href="/demande" class="btn-ink px-6 py-3 text-base">Demander un accès</Link>
                 <Link href="/tarifs" class="btn-secondary px-6 py-3 text-base">Voir les tarifs</Link>
             </div>
 
@@ -114,14 +114,14 @@ const guarantees = [
                     La configuration prend une quinzaine de minutes. Vous gardez le
                     contrôle de votre compte Meta du début à la fin.
                 </p>
-                <a
-                    :href="registerUrl"
+                <Link
+                    href="/demande"
                     class="btn mt-9 bg-white px-6 py-3 text-base text-slate-900 hover:bg-slate-100"
                 >
-                    Créer mon entreprise
-                </a>
+                    Demander un accès
+                </Link>
                 <p class="mt-4 text-sm text-slate-400">
-                    Un code d'accès est nécessaire. Écrivez-nous pour l'obtenir.
+                    Réponse sous 24 h ouvrées. Aucune carte bancaire n'est demandée.
                 </p>
             </div>
         </section>

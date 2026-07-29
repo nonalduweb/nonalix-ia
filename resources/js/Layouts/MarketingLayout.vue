@@ -7,7 +7,8 @@ const page = usePage();
 // Le site commercial est public : les liens pointent vers l'espace client,
 // sur un autre sous-domaine.
 const appUrl = computed(() => `https://${page.props.domains?.app ?? 'app.nonalixia.com'}`);
-const registerUrl = computed(() => `${appUrl.value}/register`);
+// Un visiteur n'a pas de code : tout appel a l'action le mene a la
+// demande, jamais a l'inscription, qui le renverrait sans recours.
 
 const year = new Date().getFullYear();
 </script>
@@ -29,7 +30,7 @@ const year = new Date().getFullYear();
                     <a :href="appUrl" class="hidden text-slate-600 transition hover:text-slate-900 sm:block">
                         Se connecter
                     </a>
-                    <a :href="registerUrl" class="btn-ink">Commencer</a>
+                    <Link href="/demande" class="btn-ink">Demander un accès</Link>
                 </nav>
             </div>
         </header>
