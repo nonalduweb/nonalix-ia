@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import { Head, usePage } from '@inertiajs/vue3';
 import MarketingLayout from '@/Layouts/MarketingLayout.vue';
+import { formatMoney, formatPlanPrice } from '@/money';
 
 defineProps({
     plans: Array,
@@ -25,13 +26,7 @@ const FEATURE_LABELS = {
 };
 
 const formatPrice = (plan) =>
-    plan.price_cents === 0
-        ? 'Gratuit'
-        : (plan.price_cents / 100).toLocaleString('fr-FR', {
-              style: 'currency',
-              currency: plan.currency,
-              maximumFractionDigits: 0,
-          });
+    plan.price_cents === 0 ? 'Gratuit' : formatMoney(plan.price_cents, plan.currency);
 
 // Les quotas affichés sont ceux réellement appliqués : la page lit la table
 // `plans`, elle ne peut pas dériver de ce qui est facturé.

@@ -1,19 +1,14 @@
 <script setup>
 import { Head, Link } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
+import { formatMoney, formatPlanPrice } from '@/money';
 
 const props = defineProps({
     plan: Object,
     metrics: Array,
 });
 
-const formatPrice = () =>
-    props.plan.price_cents === 0
-        ? 'Gratuit'
-        : (props.plan.price_cents / 100).toLocaleString('fr-FR', {
-              style: 'currency',
-              currency: props.plan.currency,
-          }) + (props.plan.interval === 'year' ? ' / an' : ' / mois');
+const formatPrice = () => formatPlanPrice(props.plan);
 
 const FEATURE_LABELS = {
     rag: 'Base de connaissances',

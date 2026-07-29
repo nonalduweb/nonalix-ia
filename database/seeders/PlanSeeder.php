@@ -13,7 +13,7 @@ class PlanSeeder extends Seeder
     {
         $plans = [
             [
-                'name' => 'Essai', 'slug' => 'essai', 'price_cents' => 0,
+                'name' => 'Essai', 'slug' => 'essai', 'price_cents' => 0, 'currency' => 'XOF',
                 'description' => '14 jours pour tester la plateforme.',
                 'quotas' => [
                     'messages_sent' => 200, 'messages_received' => 500,
@@ -24,8 +24,8 @@ class PlanSeeder extends Seeder
                 'is_public' => false, 'position' => 0,
             ],
             [
-                'name' => 'Starter', 'slug' => 'starter', 'price_cents' => 4900,
-                'description' => 'Pour une petite structure et un numéro WhatsApp.',
+                'name' => 'Starter', 'slug' => 'starter', 'price_cents' => 15_000, 'currency' => 'XOF',
+                'description' => 'Un numéro, un agent. Pour un commerce ou une petite structure.',
                 'quotas' => [
                     'messages_sent' => 2_000, 'messages_received' => 5_000,
                     'ai_requests' => 2_000, 'ai_input_tokens' => 5_000_000,
@@ -35,8 +35,8 @@ class PlanSeeder extends Seeder
                 'position' => 1,
             ],
             [
-                'name' => 'Business', 'slug' => 'business', 'price_cents' => 14900,
-                'description' => 'Volume soutenu, API et équipe de plusieurs opérateurs.',
+                'name' => 'Business', 'slug' => 'business', 'price_cents' => 40_000, 'currency' => 'XOF',
+                'description' => 'Volume soutenu, accès API et équipe de plusieurs opérateurs.',
                 'quotas' => [
                     'messages_sent' => 10_000, 'messages_received' => 25_000,
                     'ai_requests' => 10_000, 'ai_input_tokens' => 25_000_000,
@@ -46,7 +46,7 @@ class PlanSeeder extends Seeder
                 'position' => 2,
             ],
             [
-                'name' => 'Entreprise', 'slug' => 'entreprise', 'price_cents' => 49900,
+                'name' => 'Entreprise', 'slug' => 'entreprise', 'price_cents' => 90_000, 'currency' => 'XOF',
                 'description' => 'Volumes élevés, dépassement souple, accompagnement dédié.',
                 'quotas' => [
                     'messages_sent' => 50_000, 'messages_received' => 150_000,

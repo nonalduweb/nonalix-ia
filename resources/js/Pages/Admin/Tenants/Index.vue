@@ -2,6 +2,7 @@
 import { reactive, ref, watch } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
+import { formatMoney, formatPlanPrice } from '@/money';
 import Pagination from '@/Components/Pagination.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import Modal from '@/Components/Modal.vue';
@@ -14,12 +15,7 @@ const props = defineProps({
 });
 
 const formatPrice = (plan) =>
-    plan.price_cents === 0
-        ? 'gratuit'
-        : (plan.price_cents / 100).toLocaleString('fr-FR', {
-              style: 'currency',
-              currency: plan.currency,
-          }) + ' / mois';
+    plan.price_cents === 0 ? 'gratuit' : `${formatMoney(plan.price_cents, plan.currency)} / mois`;
 
 const filters = reactive({
     q: props.filters.q ?? '',

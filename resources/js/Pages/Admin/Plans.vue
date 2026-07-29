@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import Modal from '@/Components/Modal.vue';
+import { formatPlanPrice, toMajor, toMinor } from '@/money';
 
 const props = defineProps({
     plans: Array,
@@ -51,12 +52,14 @@ const openEdit = (plan) => {
     });
     form.reset();
     form.clearErrors();
-    priceInEuros.value = (plan.price_cents / 100).toString();
+    priceInEuros.value = toMajor(plan.price_cents, plan.currency).toString();
     editing.value = plan;
 };
 
 const submit = () => {
-    form.price_cents = Math.round(parseFloat(priceInEuros.value || '0') * 100);
+    // Converti selon la devise : le franc CFA n'a pas de sous-unite, un
+    // facteur cent y multiplierait le tarif par cent.
+    form.price_cents = toMinor(priceInEuros.value, form.currency);
 
     const options = { preserveScroll: true, onSuccess: () => (editing.value = null) };
 
@@ -71,13 +74,7 @@ const remove = () =>
         onFinish: () => (deleting.value = null),
     });
 
-const formatPrice = (plan) =>
-    plan.price_cents === 0
-        ? 'Gratuit'
-        : (plan.price_cents / 100).toLocaleString('fr-FR', {
-              style: 'currency',
-              currency: plan.currency,
-          }) + (plan.interval === 'year' ? ' / an' : ' / mois');
+const formatPrice = (plan) => formatPlanPrice(plan);
 </script>
 
 <template>

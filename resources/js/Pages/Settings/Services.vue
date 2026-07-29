@@ -1,10 +1,11 @@
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import SettingsNav from '@/Components/SettingsNav.vue';
 import Modal from '@/Components/Modal.vue';
 import EmptyState from '@/Components/EmptyState.vue';
+import { decimals, formatMoney, toMajor, toMinor } from '@/money';
 
 const props = defineProps({
     services: Array,
@@ -37,14 +38,16 @@ const form = useForm({
     position: 0,
 });
 
-// Les montants sont saisis en euros et stockés en centimes (entier) :
-// aucun flottant ne doit approcher une valeur monétaire.
-const priceInEuros = ref('');
+// Les montants sont saisis dans l'unité principale de la devise et stockés
+// dans sa plus petite unité (entier) : aucun flottant ne doit approcher une
+// valeur monétaire. Le franc CFA n'ayant pas de sous-unité, le facteur vaut
+// un — le multiplier par cent afficherait un tarif cent fois trop élevé.
+const priceInput = ref('');
 
 const openCreate = () => {
     form.reset();
     form.clearErrors();
-    priceInEuros.value = '';
+    priceInput.value = '';
     editing.value = 'new';
 };
 
@@ -52,15 +55,16 @@ const openEdit = (service) => {
     form.defaults({ ...service });
     form.reset();
     form.clearErrors();
-    priceInEuros.value = service.price_cents !== null ? (service.price_cents / 100).toString() : '';
+    priceInput.value =
+        service.price_cents !== null ? toMajor(service.price_cents, service.currency).toString() : '';
     editing.value = service;
 };
 
 const submit = () => {
     form.price_cents =
-        form.price_type === 'quote' || priceInEuros.value === ''
+        form.price_type === 'quote' || priceInput.value === ''
             ? null
-            : Math.round(parseFloat(priceInEuros.value) * 100);
+            : toMinor(priceInput.value, form.currency);
 
     const options = { preserveScroll: true, onSuccess: () => (editing.value = null) };
 
@@ -75,13 +79,14 @@ const remove = () =>
         onFinish: () => (deleting.value = null),
     });
 
+const priceStep = computed(() => (decimals(form.currency) === 0 ? '100' : '0.01'));
+const currencyLabel = computed(() => (decimals(form.currency) === 0 ? 'F CFA' : form.currency));
+const pricePlaceholder = computed(() => (decimals(form.currency) === 0 ? '5 000' : '25.00'));
+
 const formatPrice = (service) => {
     if (service.price_type === 'quote' || service.price_cents === null) return 'sur devis';
 
-    const amount = (service.price_cents / 100).toLocaleString('fr-FR', {
-        style: 'currency',
-        currency: service.currency,
-    });
+    const amount = formatMoney(service.price_cents, service.currency);
 
     return { from: `à partir de ${amount}`, hourly: `${amount} / heure` }[service.price_type] ?? amount;
 };
@@ -179,8 +184,18 @@ const formatPrice = (service) => {
                         </select>
                     </div>
                     <div v-if="form.price_type !== 'quote'">
-                        <label class="label" for="price">Montant ({{ form.currency }})</label>
-                        <input id="price" v-model="priceInEuros" type="number" step="0.01" min="0" class="input" />
+                        <label class="label" for="price">Montant ({{ currencyLabel }})</label>
+                        <!-- Le pas suit la devise : proposer des centimes sur
+                             un montant en francs CFA n'a pas de sens. -->
+                        <input
+                            id="price"
+                            v-model="priceInput"
+                            type="number"
+                            :step="priceStep"
+                            min="0"
+                            class="input"
+                            :placeholder="pricePlaceholder"
+                        />
                     </div>
                 </div>
 
