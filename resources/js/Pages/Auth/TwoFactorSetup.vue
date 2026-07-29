@@ -7,6 +7,8 @@ const props = defineProps({
     required: Boolean,
     qrCode: { type: String, default: null },
     secret: { type: String, default: null },
+    method: { type: String, default: 'totp' },
+    email: { type: String, default: '' },
 });
 
 const page = usePage();
@@ -21,6 +23,16 @@ const disableForm = useForm({ password: '' });
 const showSecret = ref(false);
 
 const start = () => router.post('/two-factor/enable', {}, { preserveScroll: true });
+
+// Second facteur par e-mail : aucun secret ni application à installer, un
+// code part immédiatement pour vérifier que l'adresse est bien accessible.
+const startEmail = () => router.post('/two-factor/enable-email', {}, { preserveScroll: true });
+
+const status = computed(() => page.props.flash?.status ?? null);
+
+// Une configuration par e-mail est en cours dès que la methode est `email`
+// et que la 2FA n'est pas encore confirmee.
+const awaitingEmailCode = computed(() => props.method === 'email' && !props.enabled);
 
 const confirm = () =>
     confirmForm.post('/two-factor/confirm', {
@@ -50,6 +62,13 @@ const copyCodes = () => {
         </p>
         <p v-else class="mb-6 text-sm text-slate-500">
             Ajoute une deuxième vérification à la connexion, en plus du mot de passe.
+        </p>
+
+        <p
+            v-if="status"
+            class="mb-6 rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+        >
+            {{ status }}
         </p>
 
         <!-- Codes de récupération : affichés une seule fois. -->
@@ -146,12 +165,62 @@ const copyCodes = () => {
             </form>
         </section>
 
-        <!-- Rien de configuré -->
-        <section v-else class="card">
-            <p class="mb-4 text-sm text-slate-500">
-                Vous aurez besoin d'une application d'authentification sur votre téléphone.
-            </p>
-            <button class="btn-primary" @click="start">Commencer la configuration</button>
+        <!-- Confirmation d'un code reçu par e-mail -->
+        <section v-else-if="awaitingEmailCode" class="card space-y-4">
+            <div>
+                <h2 class="text-sm font-semibold">Confirmez avec le code reçu</h2>
+                <p class="mt-1 text-sm text-slate-500">
+                    Un code à 6 chiffres vient d'être envoyé à {{ email }}. Cette étape
+                    vérifie que vous accédez bien à cette adresse.
+                </p>
+            </div>
+
+            <form class="space-y-3" @submit.prevent="confirm">
+                <input
+                    v-model="confirmForm.code"
+                    type="text"
+                    inputmode="numeric"
+                    maxlength="6"
+                    autocomplete="one-time-code"
+                    placeholder="123456"
+                    class="input max-w-40 text-center font-mono text-lg tracking-widest"
+                    required
+                />
+                <p v-if="confirmForm.errors.code" class="text-sm text-red-600">
+                    {{ confirmForm.errors.code }}
+                </p>
+
+                <div class="flex items-center gap-3">
+                    <button type="submit" class="btn-primary" :disabled="confirmForm.processing">
+                        Activer
+                    </button>
+                    <button type="button" class="text-sm text-slate-500 underline" @click="startEmail">
+                        Renvoyer le code
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Rien de configuré : choix de la méthode -->
+        <section v-else class="space-y-4">
+            <div class="card">
+                <h2 class="text-sm font-semibold">Application d'authentification</h2>
+                <p class="mt-1 mb-4 text-sm text-slate-500">
+                    Google Authenticator, 1Password, Authy ou équivalent. Le plus sûr :
+                    le code est produit sur votre téléphone, sans passer par un réseau.
+                </p>
+                <button class="btn-primary" @click="start">Utiliser une application</button>
+            </div>
+
+            <div class="card">
+                <h2 class="text-sm font-semibold">Code par e-mail</h2>
+                <p class="mt-1 mb-4 text-sm text-slate-500">
+                    Un code à 6 chiffres envoyé à {{ email }} à chaque connexion. Rien à
+                    installer, mais votre boîte mail devient la clé de votre compte :
+                    protégez-la au moins aussi bien.
+                </p>
+                <button class="btn-secondary" @click="startEmail">Recevoir par e-mail</button>
+            </div>
         </section>
     </div>
 </template>

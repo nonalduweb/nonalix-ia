@@ -42,6 +42,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     protected $fillable = [
         'tenant_id', 'name', 'email', 'password', 'status', 'locale', 'avatar_path',
+        'two_factor_method',
     ];
 
     protected $hidden = [
@@ -90,8 +91,18 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function hasTwoFactorEnabled(): bool
     {
-        return $this->two_factor_secret !== null
-            && $this->two_factor_confirmed_at !== null;
+        if ($this->two_factor_confirmed_at === null) {
+            return false;
+        }
+
+        // La méthode par e-mail n'a pas de secret à stocker : la preuve est
+        // l'accès à la boîte, vérifié à chaque connexion.
+        return $this->two_factor_method === 'email' || $this->two_factor_secret !== null;
+    }
+
+    public function usesEmailTwoFactor(): bool
+    {
+        return $this->two_factor_method === 'email';
     }
 
     /**

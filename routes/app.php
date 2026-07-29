@@ -110,12 +110,23 @@ Route::middleware('auth')->group(function () {
         ->name('two-factor.challenge');
     Route::post('two-factor-challenge', [TwoFactorChallengeController::class, 'store'])
         ->middleware('throttle:two-factor');
+
+    // Recours de celui qui a perdu son téléphone mais garde sa boîte mail.
+    Route::post('two-factor-challenge/email', [TwoFactorChallengeController::class, 'sendEmailCode'])
+        ->middleware('throttle:verification')
+        ->name('two-factor.email');
 });
 
 // --- Configuration de la 2FA (avant qu'elle ne soit exigée) -------------------
 Route::middleware(['auth', 'verified'])->prefix('two-factor')->as('two-factor.')->group(function () {
     Route::get('setup',      [TwoFactorSetupController::class, 'show'])->name('setup');
     Route::post('enable',    [TwoFactorSetupController::class, 'enable'])->name('enable');
+
+    // Second facteur par e-mail : même barrière, sans imposer l'installation
+    // d'une application d'authentification.
+    Route::post('enable-email', [TwoFactorSetupController::class, 'enableEmail'])
+        ->middleware('throttle:verification')
+        ->name('enable-email');
     Route::post('confirm',   [TwoFactorSetupController::class, 'confirm'])->name('confirm');
     Route::delete('disable', [TwoFactorSetupController::class, 'disable'])->name('disable');
 });

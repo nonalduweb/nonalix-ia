@@ -65,6 +65,12 @@ class HandleInertiaRequests extends Middleware
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error'   => fn () => $request->session()->get('error'),
+                // `status` porte les messages d'étape (code envoyé, lien
+                // renvoyé) : ils informent sans signaler l'aboutissement
+                // d'une action, et n'ont donc pas le même rendu que `success`.
+                'status'  => fn () => $request->session()->get('status'),
+                // Affichés une seule fois, jamais relus depuis la base.
+                'recoveryCodes' => fn () => $request->session()->get('recoveryCodes'),
             ],
 
             'domains' => [
