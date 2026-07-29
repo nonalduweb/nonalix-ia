@@ -4,26 +4,32 @@ import { Link, usePage } from '@inertiajs/vue3';
 
 const page = usePage();
 
-// Le site commercial est public : le lien de connexion pointe vers l'espace
-// client, sur un autre sous-domaine.
-const appUrl = computed(
-    () => `https://${page.props.domains?.app ?? 'app.nonalixia.com'}`,
-);
+// Le site commercial est public : les liens pointent vers l'espace client,
+// sur un autre sous-domaine.
+const appUrl = computed(() => `https://${page.props.domains?.app ?? 'app.nonalixia.com'}`);
+const registerUrl = computed(() => `${appUrl.value}/register`);
 
 const year = new Date().getFullYear();
 </script>
 
 <template>
-    <div class="flex min-h-full flex-col bg-white dark:bg-slate-950">
-        <header class="border-b border-slate-200 dark:border-slate-800">
-            <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-                <Link href="/" class="text-lg font-semibold tracking-tight">Nonalix&nbsp;IA</Link>
+    <!-- `marketing` force le rendu clair : une identité de marque qui change
+         selon les réglages du visiteur n'en est plus une. -->
+    <div class="marketing flex min-h-full flex-col bg-white text-slate-900">
+        <!-- En-tête collant et translucide : la navigation reste accessible
+             sur des pages longues sans jamais peser visuellement. -->
+        <header class="sticky top-0 z-40 border-b border-slate-100 bg-white/85 backdrop-blur">
+            <div class="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
+                <Link href="/" class="text-[15px] font-semibold tracking-tight">Nonalix&nbsp;IA</Link>
 
-                <nav class="flex items-center gap-6 text-sm">
-                    <Link href="/tarifs" class="text-slate-600 hover:text-slate-900 dark:text-slate-300">
+                <nav class="flex items-center gap-7 text-[15px]">
+                    <Link href="/tarifs" class="text-slate-600 transition hover:text-slate-900">
                         Tarifs
                     </Link>
-                    <a :href="appUrl" class="btn-primary">Se connecter</a>
+                    <a :href="appUrl" class="hidden text-slate-600 transition hover:text-slate-900 sm:block">
+                        Se connecter
+                    </a>
+                    <a :href="registerUrl" class="btn-ink">Commencer</a>
                 </nav>
             </div>
         </header>
@@ -32,14 +38,14 @@ const year = new Date().getFullYear();
             <slot />
         </main>
 
-        <footer class="border-t border-slate-200 dark:border-slate-800">
-            <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-8 text-sm text-slate-500">
+        <footer class="mt-24 border-t border-slate-100">
+            <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4 px-6 py-10 text-sm text-slate-500">
                 <p>© {{ year }} Nonalix IA</p>
 
-                <nav class="flex gap-5">
-                    <Link href="/mentions-legales" class="hover:text-slate-900">Mentions légales</Link>
-                    <Link href="/confidentialite" class="hover:text-slate-900">Confidentialité</Link>
-                    <Link href="/conditions-utilisation" class="hover:text-slate-900">CGU</Link>
+                <nav class="flex flex-wrap gap-6">
+                    <Link href="/mentions-legales" class="transition hover:text-slate-900">Mentions légales</Link>
+                    <Link href="/confidentialite" class="transition hover:text-slate-900">Confidentialité</Link>
+                    <Link href="/conditions-utilisation" class="transition hover:text-slate-900">CGU</Link>
                 </nav>
             </div>
         </footer>

@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 import { Head, usePage } from '@inertiajs/vue3';
 import MarketingLayout from '@/Layouts/MarketingLayout.vue';
-import { formatMoney, formatPlanPrice } from '@/money';
+import { formatMoney } from '@/money';
 
 defineProps({
     plans: Array,
@@ -10,7 +10,9 @@ defineProps({
 
 const page = usePage();
 
-const appUrl = computed(() => `https://${page.props.domains?.app ?? 'app.nonalixia.com'}`);
+const registerUrl = computed(
+    () => `https://${page.props.domains?.app ?? 'app.nonalixia.com'}/register`,
+);
 
 const QUOTA_LABELS = {
     messages_sent: 'Messages envoyés',
@@ -37,100 +39,129 @@ const displayedQuotas = (plan) =>
             label,
             value: plan.quotas[key].toLocaleString('fr-FR'),
         }));
+
+const FAQ = [
+    {
+        q: 'Que se passe-t-il si je dépasse un quota ?',
+        a: "Sur les formules standards, l'envoi est bloqué et vous êtes prévenu dès 80 % de consommation. Aucun dépassement n'est facturé sans que vous l'ayez choisi.",
+    },
+    {
+        q: 'Les coûts WhatsApp de Meta sont-ils inclus ?',
+        a: "Non. Meta facture directement les conversations sur votre compte WhatsApp Business, selon sa propre grille. Nous n'intervenons pas dans cette relation.",
+    },
+    {
+        q: 'Puis-je utiliser ma propre clé IA ?',
+        a: 'Oui. Vous pouvez fournir votre clé OpenAI, Anthropic ou Google : la consommation est alors facturée directement par le fournisseur.',
+    },
+    {
+        q: 'Que devient mon numéro si je pars ?',
+        a: "Il vous appartient. Le compte WhatsApp Business est le vôtre : il suffit de retirer notre URL de webhook.",
+    },
+];
 </script>
 
 <template>
     <Head title="Tarifs" />
 
     <MarketingLayout>
-        <section class="mx-auto max-w-6xl px-4 py-20">
-            <div class="mb-14 text-center">
-                <h1 class="text-3xl font-semibold tracking-tight">Tarifs</h1>
-                <p class="mx-auto mt-4 max-w-2xl text-slate-600 dark:text-slate-300">
+        <section class="mx-auto max-w-5xl px-6 pt-20 pb-8 sm:pt-28">
+            <div class="max-w-2xl">
+                <h1 class="text-4xl font-semibold tracking-tight sm:text-5xl">
+                    Des tarifs lisibles.
+                </h1>
+                <p class="mt-5 text-lg leading-relaxed text-slate-600">
                     Un abonnement mensuel, sans engagement. Les quotas correspondent à
-                    l'usage réel : vous voyez votre consommation en temps réel depuis
-                    votre tableau de bord.
+                    l'usage réel, visible en temps réel depuis votre tableau de bord.
                 </p>
             </div>
+        </section>
 
-            <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <section class="mx-auto max-w-5xl px-6 pb-8">
+            <div class="grid gap-5 md:grid-cols-3">
                 <div
                     v-for="plan in plans"
                     :key="plan.id"
-                    class="card flex flex-col"
-                    :class="plan.slug === 'business' && 'border-brand-500 ring-1 ring-brand-500'"
+                    class="flex flex-col rounded-2xl border p-6"
+                    :class="
+                        plan.slug === 'business'
+                            ? 'border-slate-900 bg-slate-50/60'
+                            : 'border-slate-200'
+                    "
                 >
-                    <div class="mb-5">
-                        <h2 class="text-lg font-semibold">{{ plan.name }}</h2>
-                        <p v-if="plan.description" class="mt-1 text-sm text-slate-500">
-                            {{ plan.description }}
-                        </p>
+                    <div class="flex items-center gap-2">
+                        <h2 class="font-semibold">{{ plan.name }}</h2>
+                        <span
+                            v-if="plan.slug === 'business'"
+                            class="rounded-full bg-slate-900 px-2 py-0.5 text-[11px] font-medium text-white"
+                        >
+                            Le plus choisi
+                        </span>
                     </div>
 
-                    <p class="mb-6">
-                        <span class="text-3xl font-semibold">{{ formatPrice(plan) }}</span>
+                    <p v-if="plan.description" class="mt-2 min-h-[2.5rem] text-sm leading-relaxed text-slate-500">
+                        {{ plan.description }}
+                    </p>
+
+                    <!-- Le prix porte la hiérarchie de la carte : c'est
+                         l'information qu'on vient chercher. -->
+                    <p class="mt-6 flex items-baseline gap-1.5">
+                        <span class="text-3xl font-semibold tracking-tight">{{ formatPrice(plan) }}</span>
                         <span v-if="plan.price_cents > 0" class="text-sm text-slate-500">
                             / {{ plan.interval === 'year' ? 'an' : 'mois' }}
                         </span>
                     </p>
 
-                    <dl class="mb-6 space-y-2 text-sm">
-                        <div v-for="quota in displayedQuotas(plan)" :key="quota.label" class="flex justify-between gap-3">
-                            <dt class="text-slate-600 dark:text-slate-300">{{ quota.label }}</dt>
+                    <a
+                        :href="registerUrl"
+                        class="mt-6 w-full"
+                        :class="plan.slug === 'business' ? 'btn-ink' : 'btn-secondary'"
+                    >
+                        Commencer
+                    </a>
+
+                    <dl class="mt-7 space-y-2.5 border-t border-slate-100 pt-6 text-sm">
+                        <div
+                            v-for="quota in displayedQuotas(plan)"
+                            :key="quota.label"
+                            class="flex justify-between gap-3"
+                        >
+                            <dt class="text-slate-500">{{ quota.label }}</dt>
                             <dd class="font-medium tabular-nums">{{ quota.value }}</dd>
                         </div>
                     </dl>
 
-                    <ul class="mb-8 space-y-1.5 text-sm">
+                    <ul class="mt-5 space-y-2 text-sm">
                         <li
                             v-for="(label, key) in FEATURE_LABELS"
                             :key="key"
-                            class="flex items-center gap-2"
-                            :class="!plan.features?.[key] && 'text-slate-400'"
+                            class="flex items-center gap-2.5"
+                            :class="plan.features?.[key] ? 'text-slate-700' : 'text-slate-400'"
                         >
-                            <span :class="plan.features?.[key] ? 'text-emerald-600' : 'text-slate-300'">
-                                {{ plan.features?.[key] ? '✓' : '○' }}
+                            <span :class="plan.features?.[key] ? 'text-slate-900' : 'text-slate-300'">
+                                {{ plan.features?.[key] ? '✓' : '—' }}
                             </span>
                             {{ label }}
                         </li>
                     </ul>
-
-                    <a :href="appUrl" class="btn-primary mt-auto w-full">Choisir</a>
                 </div>
             </div>
 
-            <div class="mt-16 grid gap-8 md:grid-cols-2">
-                <div>
-                    <h3 class="font-medium">Que se passe-t-il si je dépasse un quota ?</h3>
-                    <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">
-                        Sur les plans standards, l'envoi est bloqué et vous êtes prévenu
-                        dès 80 % de consommation. Aucun dépassement n'est facturé sans
-                        que vous l'ayez choisi.
-                    </p>
+            <p class="mt-6 text-sm text-slate-500">
+                Un code d'accès est nécessaire pour ouvrir un compte.
+                <a :href="registerUrl" class="font-medium text-slate-900 underline">Écrivez-nous</a>
+                pour l'obtenir.
+            </p>
+        </section>
+
+        <section class="mx-auto max-w-3xl px-6 pt-16">
+            <h2 class="text-2xl font-semibold tracking-tight">Questions fréquentes</h2>
+
+            <dl class="mt-8 divide-y divide-slate-100">
+                <div v-for="item in FAQ" :key="item.q" class="py-6">
+                    <dt class="font-medium">{{ item.q }}</dt>
+                    <dd class="mt-2 leading-relaxed text-slate-600">{{ item.a }}</dd>
                 </div>
-                <div>
-                    <h3 class="font-medium">Les coûts WhatsApp de Meta sont-ils inclus ?</h3>
-                    <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">
-                        Non. Meta facture directement les conversations sur votre compte
-                        WhatsApp Business, selon sa propre grille. Nous n'intervenons pas
-                        dans cette relation.
-                    </p>
-                </div>
-                <div>
-                    <h3 class="font-medium">Puis-je utiliser ma propre clé IA ?</h3>
-                    <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">
-                        Oui. Vous pouvez fournir votre clé OpenAI, Anthropic ou Google :
-                        la consommation est alors facturée directement par le fournisseur.
-                    </p>
-                </div>
-                <div>
-                    <h3 class="font-medium">Que devient mon numéro si je pars ?</h3>
-                    <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">
-                        Il vous appartient. Le compte WhatsApp Business est le vôtre :
-                        il suffit de retirer notre URL de webhook.
-                    </p>
-                </div>
-            </div>
+            </dl>
         </section>
     </MarketingLayout>
 </template>

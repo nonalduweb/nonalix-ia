@@ -46,70 +46,81 @@ const guarantees = [
     <Head title="Un agent IA sur votre WhatsApp" />
 
     <MarketingLayout>
-        <section class="mx-auto max-w-4xl px-4 py-24 text-center">
-            <h1 class="text-4xl font-semibold tracking-tight sm:text-5xl">
-                Un agent IA qui répond sur
-                <span class="text-brand-600">votre WhatsApp</span>
+        <!-- Héros aligné à gauche et non centré : une colonne de texte se lit
+             plus vite, et la promesse tient en une ligne. -->
+        <section class="mx-auto max-w-5xl px-6 pt-24 pb-20 sm:pt-32">
+            <h1 class="max-w-3xl text-[2.75rem] font-semibold leading-[1.08] tracking-tight sm:text-6xl">
+                Vos clients écrivent.<br />
+                L'agent répond.
             </h1>
 
-            <p class="mx-auto mt-6 max-w-2xl text-lg text-slate-600 dark:text-slate-300">
-                Vos clients écrivent sur votre numéro habituel. L'agent répond avec vos
-                informations, jour et nuit, et passe la main à votre équipe dès que la
-                demande le mérite.
+            <p class="mt-7 max-w-xl text-lg leading-relaxed text-slate-600">
+                Sur votre numéro WhatsApp habituel, jour et nuit, avec vos propres
+                informations. Et il passe la main à votre équipe dès que la demande
+                le mérite.
             </p>
 
-            <div class="mt-10 flex flex-wrap justify-center gap-4">
-                <a :href="registerUrl" class="btn-primary px-6 py-3 text-base">Démarrer l'essai</a>
+            <div class="mt-10 flex flex-wrap items-center gap-3">
+                <a :href="registerUrl" class="btn-ink px-6 py-3 text-base">Commencer</a>
                 <Link href="/tarifs" class="btn-secondary px-6 py-3 text-base">Voir les tarifs</Link>
             </div>
 
-            <p class="mt-4 text-sm text-slate-500">14 jours d'essai · sans carte bancaire</p>
+            <p class="mt-5 text-sm text-slate-500">
+                14 jours d'essai · sans carte bancaire · à partir de 15 000 F CFA par mois
+            </p>
         </section>
 
-        <section class="border-y border-slate-200 bg-slate-50 py-20 dark:border-slate-800 dark:bg-slate-900">
-            <div class="mx-auto max-w-5xl px-4">
-                <h2 class="mb-12 text-center text-2xl font-semibold">Trois étapes, un après-midi</h2>
+        <!-- Séparation par la couleur de fond plutôt que par un trait : c'est
+             l'espace qui structure la page, pas la bordure. -->
+        <section class="bg-slate-50 py-24">
+            <div class="mx-auto max-w-5xl px-6">
+                <h2 class="text-3xl font-semibold tracking-tight">Trois étapes, un après-midi</h2>
 
-                <ol class="grid gap-8 md:grid-cols-3">
+                <ol class="mt-14 grid gap-12 md:grid-cols-3">
                     <li v-for="(step, index) in steps" :key="step.title">
-                        <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-brand-600 text-sm font-semibold text-white">
-                            {{ index + 1 }}
+                        <span class="text-sm font-medium tabular-nums text-slate-400">
+                            0{{ index + 1 }}
                         </span>
-                        <h3 class="mt-4 font-medium">{{ step.title }}</h3>
-                        <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">{{ step.text }}</p>
+                        <h3 class="mt-3 text-lg font-medium">{{ step.title }}</h3>
+                        <p class="mt-2.5 leading-relaxed text-slate-600">{{ step.text }}</p>
                     </li>
                 </ol>
             </div>
         </section>
 
-        <section class="py-20">
-            <div class="mx-auto max-w-5xl px-4">
-                <h2 class="mb-4 text-center text-2xl font-semibold">Ce que nous garantissons</h2>
-                <p class="mx-auto mb-12 max-w-2xl text-center text-slate-600 dark:text-slate-300">
+        <section class="py-24">
+            <div class="mx-auto max-w-5xl px-6">
+                <h2 class="text-3xl font-semibold tracking-tight">Ce que nous garantissons</h2>
+                <p class="mt-4 max-w-xl leading-relaxed text-slate-600">
                     Un agent qui parle à vos clients engage votre réputation. Voici les
                     garde-fous que nous avons mis en place.
                 </p>
 
-                <div class="grid gap-6 md:grid-cols-2">
-                    <div v-for="item in guarantees" :key="item.title" class="card">
-                        <h3 class="font-medium">{{ item.title }}</h3>
-                        <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">{{ item.text }}</p>
+                <div class="mt-14 grid gap-x-12 gap-y-10 md:grid-cols-2">
+                    <div v-for="item in guarantees" :key="item.title">
+                        <h3 class="text-lg font-medium">{{ item.title }}</h3>
+                        <p class="mt-2.5 leading-relaxed text-slate-600">{{ item.text }}</p>
                     </div>
                 </div>
             </div>
         </section>
 
-        <section class="border-t border-slate-200 py-20 text-center dark:border-slate-800">
-            <div class="mx-auto max-w-2xl px-4">
-                <h2 class="text-2xl font-semibold">Essayez sur votre propre numéro</h2>
-                <p class="mt-3 text-slate-600 dark:text-slate-300">
+        <section class="mx-auto max-w-5xl px-6 pb-8">
+            <div class="rounded-3xl bg-slate-900 px-8 py-16 text-center sm:px-16">
+                <h2 class="text-3xl font-semibold tracking-tight text-white">
+                    Essayez sur votre propre numéro
+                </h2>
+                <p class="mx-auto mt-4 max-w-lg leading-relaxed text-slate-300">
                     La configuration prend une quinzaine de minutes. Vous gardez le
                     contrôle de votre compte Meta du début à la fin.
                 </p>
-                <a :href="registerUrl" class="btn-primary mt-8 inline-flex px-6 py-3 text-base">
+                <a
+                    :href="registerUrl"
+                    class="btn mt-9 bg-white px-6 py-3 text-base text-slate-900 hover:bg-slate-100"
+                >
                     Créer mon entreprise
                 </a>
-                <p class="mt-3 text-sm text-slate-500">
+                <p class="mt-4 text-sm text-slate-400">
                     Un code d'accès est nécessaire. Écrivez-nous pour l'obtenir.
                 </p>
             </div>
