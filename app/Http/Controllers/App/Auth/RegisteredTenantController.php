@@ -6,12 +6,15 @@ namespace App\Http\Controllers\App\Auth;
 
 use App\Exceptions\AccessCodeUnusableException;
 use App\Models\AccessCode;
+use App\Models\SocialAccount;
+use App\Models\User;
 use App\Services\Audit\AuditLogger;
 use App\Services\Tenancy\TenantRegistrar;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -37,6 +40,7 @@ class RegisteredTenantController
             // Pré-remplissage depuis un lien du type /register?code=ABCD-...,
             // pour que le prospect n'ait pas à recopier le code à la main.
             'prefilledCode' => $request->query('code'),
+            'googleEnabled' => filled(config('services.google.client_id')),
         ]);
     }
 
@@ -114,5 +118,111 @@ class RegisteredTenantController
         $request->session()->forget('auth.two_factor_verified');
 
         return redirect()->route('verification.notice');
+    }
+
+    /**
+     * Finalisation d'une inscription entamée via Google.
+     *
+     * Google a prouvé l'identité, pas le droit d'ouvrir un compte : le code
+     * d'accès reste exigé, comme pour l'inscription classique.
+     */
+    public function createSocial(Request $request): Response|RedirectResponse
+    {
+        $pending = $this->pendingGoogle($request);
+
+        if ($pending === null) {
+            return redirect()->route('login')
+                ->withErrors(['email' => 'Votre session a expiré. Recommencez la connexion Google.']);
+        }
+
+        return Inertia::render('Auth/RegisterSocial', [
+            'name'          => $pending['name'],
+            'email'         => $pending['email'],
+            'prefilledCode' => $request->query('code'),
+        ]);
+    }
+
+    public function storeSocial(Request $request): RedirectResponse
+    {
+        $pending = $this->pendingGoogle($request);
+
+        if ($pending === null) {
+            return redirect()->route('login')
+                ->withErrors(['email' => 'Votre session a expiré. Recommencez la connexion Google.']);
+        }
+
+        $validated = $request->validate([
+            'code'    => ['required', 'string', 'max:32'],
+            'company' => ['required', 'string', 'min:2', 'max:160'],
+            'name'    => ['required', 'string', 'min:2', 'max:120'],
+            'terms'   => ['accepted'],
+        ], [
+            'terms.accepted' => 'Vous devez accepter les conditions d\'utilisation.',
+        ]);
+
+        // L'adresse vient de Google, jamais du formulaire : la laisser
+        // modifiable permettrait de rattacher l'identité Google d'un tiers.
+        if (User::query()->where('email', $pending['email'])->exists()) {
+            return redirect()->route('login')
+                ->withErrors(['email' => 'Un compte existe déjà pour cette adresse.']);
+        }
+
+        try {
+            ['owner' => $owner] = $this->registrar->register(
+                $validated['code'],
+                [
+                    'company'  => $validated['company'],
+                    'name'     => $validated['name'],
+                    'email'    => $pending['email'],
+                    // Mot de passe aléatoire jamais communiqué : le compte
+                    // s'utilise via Google. Le propriétaire pourra s'en
+                    // définir un par « mot de passe oublié ».
+                    'password' => Str::random(48),
+                ],
+                $request->ip(),
+            );
+        } catch (AccessCodeUnusableException $e) {
+            throw ValidationException::withMessages(['code' => $e->getMessage()]);
+        }
+
+        SocialAccount::create([
+            'user_id'      => $owner->id,
+            'provider'     => 'google',
+            'provider_id'  => $pending['id'],
+            'email'        => $pending['email'],
+            'avatar_url'   => $pending['avatar'] ?? null,
+            'last_used_at' => now(),
+        ]);
+
+        // Google atteste l'adresse : pas de second lien de confirmation.
+        $owner->forceFill(['email_verified_at' => now()])->save();
+
+        $request->session()->forget('google_pending');
+
+        Auth::login($owner, remember: true);
+        $request->session()->regenerate();
+        $request->session()->forget('auth.two_factor_verified');
+
+        return redirect()->route('dashboard');
+    }
+
+    /**
+     * Identité Google mise de côté par le callback, si elle est encore valide.
+     *
+     * L'expiration est vérifiée ici et pas seulement à l'écriture : une
+     * session oubliée ouverte sur un poste partagé ne doit pas rester une
+     * inscription en attente indéfiniment.
+     */
+    private function pendingGoogle(Request $request): ?array
+    {
+        $pending = $request->session()->get('google_pending');
+
+        if (! is_array($pending) || ($pending['expires_at'] ?? 0) < now()->timestamp) {
+            $request->session()->forget('google_pending');
+
+            return null;
+        }
+
+        return $pending;
     }
 }

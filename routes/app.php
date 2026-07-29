@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\App\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\App\Auth\EmailVerificationController;
+use App\Http\Controllers\App\Auth\GoogleAuthController;
 use App\Http\Controllers\App\Auth\InvitationController;
 use App\Http\Controllers\App\Auth\PasswordResetController;
 use App\Http\Controllers\App\Auth\RegisteredTenantController;
@@ -44,6 +45,17 @@ Route::middleware('guest')->group(function () {
     Route::get('register',  [RegisteredTenantController::class, 'create'])->name('register');
     Route::post('register', [RegisteredTenantController::class, 'store'])
         ->middleware('throttle:register');
+
+    // --- Connexion Google -------------------------------------------------------
+    // Google remplace le mot de passe, pas le code d'acces : un visiteur
+    // inconnu est renvoye vers la finalisation, qui le reclame.
+    Route::get('auth/google',          [GoogleAuthController::class, 'redirect'])->name('auth.google');
+    Route::get('auth/google/callback', [GoogleAuthController::class, 'callback'])->name('auth.google.callback');
+
+    Route::get('register/social',  [RegisteredTenantController::class, 'createSocial'])->name('register.social');
+    Route::post('register/social', [RegisteredTenantController::class, 'storeSocial'])
+        ->middleware('throttle:register')
+        ->name('register.social.store');
 
     Route::post('register/check-code', [RegisteredTenantController::class, 'checkCode'])
         ->middleware('throttle:access-code')

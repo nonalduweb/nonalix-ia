@@ -21,7 +21,11 @@ class AuthenticatedSessionController
 
     public function create(): Response
     {
-        return Inertia::render('Auth/Login');
+        return Inertia::render('Auth/Login', [
+            // Sans identifiants OAuth, le bouton n'est pas rendu : un bouton
+            // qui mene a une erreur vaut moins que pas de bouton du tout.
+            'googleEnabled' => filled(config('services.google.client_id')),
+        ]);
     }
 
     // Type de retour élargi : Inertia::location() renvoie une réponse 409
