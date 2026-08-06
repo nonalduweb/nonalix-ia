@@ -10,6 +10,7 @@ const navigation = [
     { label: 'Entreprises', href: '/tenants' },
     { label: 'Codes d\'accès', href: '/access-codes' },
     { label: 'Plans', href: '/plans' },
+    { label: 'Clés IA', href: '/platform-keys' },
     { label: 'Consommation', href: '/usage' },
     { label: 'Incidents', href: '/incidents' },
     { label: 'Audit', href: '/audit-logs' },

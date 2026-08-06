@@ -9,6 +9,7 @@ use App\Contracts\AI\EmbeddingProvider;
 use App\Enums\AiProvider;
 use App\Exceptions\AiProviderException;
 use App\Models\Agent;
+use App\Models\PlatformSetting;
 use App\Services\Tenancy\TenantContext;
 use App\Services\AI\Providers\AnthropicChatProvider;
 use App\Services\AI\Providers\GeminiChatProvider;
@@ -172,9 +173,23 @@ class AiProviderManager
         return $agent?->provider === $provider ? $agent->api_key : null;
     }
 
+    /**
+     * Clé de la plateforme.
+     *
+     * La base PRIME sur le `.env` : c'est la valeur saisie depuis la
+     * super-administration, la seule qu'un exploitant sans accès SSH puisse
+     * modifier. Le fichier d'environnement reste le repli, utile au
+     * développement local et aux traitements exécutés avant toute saisie.
+     */
+    private function platformKey(AiProvider $provider): ?string
+    {
+        return PlatformSetting::get("ai.{$provider->value}.api_key")
+            ?? (config("ai.providers.{$provider->value}.api_key") ?: null);
+    }
+
     private function requireApiKey(AiProvider $provider): string
     {
-        $key = config("ai.providers.{$provider->value}.api_key");
+        $key = $this->platformKey($provider);
 
         if (! is_string($key) || $key === '') {
             // Message destiné au CLIENT, qui n'a aucun accès au serveur :

@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ImpersonationController;
 use App\Http\Controllers\Admin\IncidentController;
 use App\Http\Controllers\Admin\PlanController;
+use App\Http\Controllers\Admin\PlatformKeyController;
 use App\Http\Controllers\Admin\TenantController;
 use App\Http\Controllers\Admin\UsageController;
 use Illuminate\Support\Facades\Route;
@@ -85,6 +86,13 @@ Route::middleware(['auth', '2fa', 'super-admin'])->group(function () {
     // journal d'audit et dans les consommations déjà enregistrées.
     Route::post('access-codes/{accessCode}/revoke', [AccessCodeController::class, 'revoke'])
         ->name('admin.access-codes.revoke');
+
+    // --- Cles IA de la plateforme -----------------------------------------------
+    // Elles ne vivaient que dans le .env : un exploitant sans acces SSH ne
+    // pouvait en renseigner aucune.
+    Route::get('platform-keys',       [PlatformKeyController::class, 'index'])->name('admin.platform-keys.index');
+    Route::post('platform-keys',      [PlatformKeyController::class, 'update'])->name('admin.platform-keys.update');
+    Route::post('platform-keys/test', [PlatformKeyController::class, 'test'])->name('admin.platform-keys.test');
 
     // --- Exploitation -----------------------------------------------------------
     Route::get('usage',              UsageController::class)->name('admin.usage');
