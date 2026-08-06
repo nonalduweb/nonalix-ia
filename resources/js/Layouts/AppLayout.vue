@@ -8,21 +8,21 @@ const user = computed(() => page.props.auth?.user);
 const tenant = computed(() => page.props.tenant);
 const impersonating = computed(() => page.props.impersonating);
 
-const navigation = [
-    { label: 'Tableau de bord', href: '/', permission: null },
-    { label: 'Conversations', href: '/conversations', permission: 'conversations.view' },
-    { label: 'Contacts', href: '/contacts', permission: 'contacts.view' },
-    { label: 'Prospects', href: '/leads', permission: 'leads.view' },
-    { label: 'Connaissances', href: '/knowledge', permission: 'knowledge.view' },
-    { label: 'Configuration', href: '/settings/business', permission: 'settings.update' },
-];
+const navigation = computed(() => [
+    { label: 'Tableau de bord', href: '/', permission: null, show: true },
+    { label: 'WhatsApp', href: '/conversations', permission: 'conversations.view', show: !!tenant.value?.whatsapp_connected },
+    { label: 'Contacts', href: '/contacts', permission: 'contacts.view', show: true },
+    { label: 'Prospects', href: '/leads', permission: 'leads.view', show: true },
+    { label: 'Connaissances', href: '/knowledge', permission: 'knowledge.view', show: true },
+    { label: 'Configuration', href: '/settings/business', permission: 'settings.update', show: true },
+]);
 
 // Les permissions ne servent qu'à masquer ce qui est inutile : l'autorisation
 // réelle est vérifiée côté serveur par les policies. Cacher un lien n'a
 // jamais protégé une route.
 const visibleNavigation = computed(() =>
-    navigation.filter(
-        (item) => !item.permission || user.value?.permissions?.includes(item.permission),
+    navigation.value.filter(
+        (item) => (!item.permission || user.value?.permissions?.includes(item.permission)) && item.show,
     ),
 );
 

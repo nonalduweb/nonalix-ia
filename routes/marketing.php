@@ -25,3 +25,8 @@ Route::post('demande', [AccessRequestController::class, 'store'])
 Route::get('mentions-legales',       [PageController::class, 'legal'])->name('marketing.legal');
 Route::get('confidentialite',        [PageController::class, 'privacy'])->name('marketing.privacy');
 Route::get('conditions-utilisation', [PageController::class, 'terms'])->name('marketing.terms');
+
+// --- English/Meta Requirements Routes -----------------------------------------
+Route::get('privacy-policy',         [PageController::class, 'privacy'])->name('marketing.privacy-policy');
+Route::get('terms',                  [PageController::class, 'terms'])->name('marketing.terms-english');
+Route::get('delete-data',            [PageController::class, 'deleteData'])->name('marketing.delete-data');

@@ -56,6 +56,7 @@ class HandleInertiaRequests extends Middleware
                 'status' => $tenant->status->value,
                 'plan'   => $tenant->plan?->name,
                 'trial_ends_at' => $tenant->trial_ends_at?->toIso8601String(),
+                'whatsapp_connected' => $tenant->whatsappAccounts()->where('status', \App\Enums\WhatsAppAccountStatus::Connected->value)->exists(),
             ],
 
             // Bannière d'impersonation : l'opérateur doit toujours savoir

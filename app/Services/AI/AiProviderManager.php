@@ -78,22 +78,33 @@ class AiProviderManager
     /**
      * Fournisseur d'embeddings.
      *
-     * Piloté par la configuration de la PLATEFORME, jamais par l'agent : tous
-     * les vecteurs doivent vivre dans le même espace, sinon les scores de
+     * Le MODÈLE et les DIMENSIONS restent pilotés par la plateforme : tous les
+     * vecteurs doivent vivre dans le même espace, sinon les scores de
      * similarité deviennent incomparables entre documents.
+     *
+     * La CLÉ, elle, peut venir du client. Deux comptes OpenAI appelant le même
+     * modèle produisent des vecteurs identiques : la clé n'influe en rien sur
+     * l'espace vectoriel, seulement sur qui paie. Les lier était une confusion
+     * — et elle empêchait un client ayant fourni sa propre clé d'indexer le
+     * moindre document, alors que le site le lui promet explicitement.
+     *
+     * @param  string|null  $apiKeyOverride  clé du client, si elle porte sur
+     *                                       le même fournisseur que les embeddings
      */
-    public function embeddings(): EmbeddingProvider
+    public function embeddings(?string $apiKeyOverride = null): EmbeddingProvider
     {
         $provider   = $this->normalize(config('ai.embeddings.provider'));
         $model      = (string) config('ai.embeddings.model');
         $dimensions = (int) config('ai.embeddings.dimensions');
 
+        $key = $apiKeyOverride ?? $this->requireApiKey($provider);
+
         return match ($provider) {
             AiProvider::OpenAI => new OpenAiEmbeddingProvider(
-                $this->requireApiKey($provider), $this->baseUrl($provider), $model, $dimensions,
+                $key, $this->baseUrl($provider), $model, $dimensions,
             ),
             AiProvider::Gemini => new GeminiEmbeddingProvider(
-                $this->requireApiKey($provider), $this->baseUrl($provider), $model, $dimensions,
+                $key, $this->baseUrl($provider), $model, $dimensions,
             ),
             AiProvider::Anthropic => throw new InvalidArgumentException(
                 'Anthropic ne fournit pas d\'API d\'embeddings. Choisir OpenAI ou Gemini '
@@ -139,11 +150,15 @@ class AiProviderManager
         $key = config("ai.providers.{$provider->value}.api_key");
 
         if (! is_string($key) || $key === '') {
+            // Message destiné au CLIENT, qui n'a aucun accès au serveur :
+            // l'envoyer renseigner une variable d'environnement le laissait
+            // sans recours. La clé de son agent est, elle, à sa portée.
             throw AiProviderException::permanent(
                 sprintf(
-                    'Aucune clé API configurée pour %s. Renseigner %s_API_KEY dans l\'environnement.',
+                    'Aucune clé %s n\'est disponible. Renseignez la vôtre dans '
+                    .'Configuration → Agent IA, ou contactez %s.',
                     $provider->label(),
-                    strtoupper($provider->value),
+                    config('nonalix.support_email'),
                 ),
                 $provider->value,
             );

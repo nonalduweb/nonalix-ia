@@ -43,6 +43,14 @@ class ConversationController
                 'open'     => Conversation::query()->where('status', ConversationStatus::Open->value)->count(),
                 'awaiting' => Conversation::query()->awaitingHuman()->count(),
             ],
+            'conversation'  => null,
+            'messages'      => [],
+            'notes'         => [],
+            'lead'          => null,
+            'operators'     => User::query()->ofTenant($request->user()->tenant_id)->select('id', 'name')->get(),
+            'windowOpen'    => false,
+            'windowExpires' => null,
+            'templates'     => [],
         ]);
     }
 
@@ -57,20 +65,42 @@ class ConversationController
             $conversation->forceFill(['unread_count' => 0])->save();
         }
 
-        return Inertia::render('Conversations/Show', [
-            'conversation' => $conversation->load(['contact', 'assignedUser:id,name', 'whatsappAccount:id,display_phone_number']),
-            'messages'     => $conversation->messages()
+        $conversations = Conversation::query()
+            ->with(['contact:id,name,profile_name,wa_id', 'assignedUser:id,name'])
+            ->when($request->string('status')->toString() !== '', fn ($q) => $q->where('status', $request->string('status')))
+            ->when($request->boolean('mine'), fn ($q) => $q->assignedTo($request->user()->id))
+            ->when($request->boolean('awaiting'), fn ($q) => $q->awaitingHuman())
+            ->when($request->string('q')->toString() !== '', function ($q) use ($request) {
+                $term = $request->string('q')->toString();
+                $q->whereHas('contact', fn ($c) => $c->search($term));
+            })
+            ->orderByDesc('last_message_at')
+            ->paginate(30)
+            ->withQueryString();
+
+        return Inertia::render('Conversations/Index', [
+            'conversations' => $conversations,
+            'filters'       => $request->only(['status', 'mine', 'awaiting', 'q']),
+            'counts'        => [
+                'open'     => Conversation::query()->where('status', ConversationStatus::Open->value)->count(),
+                'awaiting' => Conversation::query()->awaitingHuman()->count(),
+            ],
+            'conversation'  => $conversation->load(['contact', 'assignedUser:id,name', 'whatsappAccount:id,display_phone_number']),
+            'messages'      => $conversation->messages()
                 ->with('sender:id,name')
                 ->orderBy('created_at')
                 ->limit(200)
                 ->get(),
-            'notes' => $conversation->notes()->with('author:id,name')->latest()->get(),
-            'lead'  => $conversation->tenant
+            'notes'         => $conversation->notes()->with('author:id,name')->latest()->get(),
+            'lead'          => $conversation->tenant
                 ? \App\Models\Lead::query()->where('contact_id', $conversation->contact_id)->open()->first()
                 : null,
-            'operators'      => User::query()->ofTenant($conversation->tenant_id)->select('id', 'name')->get(),
-            'windowOpen'     => $conversation->isWithinServiceWindow(),
-            'windowExpires'  => $conversation->window_expires_at?->toIso8601String(),
+            'operators'     => User::query()->ofTenant($conversation->tenant_id)->select('id', 'name')->get(),
+            'windowOpen'    => $conversation->isWithinServiceWindow(),
+            'windowExpires' => $conversation->window_expires_at?->toIso8601String(),
+            'templates'     => $conversation->whatsappAccount
+                ? $conversation->whatsappAccount->templates()->approved()->get()
+                : [],
         ]);
     }
 

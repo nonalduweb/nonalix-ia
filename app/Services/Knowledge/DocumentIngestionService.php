@@ -7,6 +7,7 @@ namespace App\Services\Knowledge;
 use App\Contracts\Knowledge\DocumentExtractor;
 use App\Data\Knowledge\Chunk;
 use App\Enums\DocumentStatus;
+use App\Models\Agent;
 use App\Models\Document;
 use App\Models\DocumentChunk;
 use App\Services\AI\AiProviderManager;
@@ -86,6 +87,26 @@ class DocumentIngestionService
     }
 
     /**
+     * Clé du client, si elle est utilisable pour les embeddings.
+     *
+     * Elle n'est retenue que si l'agent parle au MÊME fournisseur que celui
+     * configuré pour les embeddings : une clé Anthropic ne signerait pas un
+     * appel OpenAI. Sinon on retombe sur la clé de la plateforme.
+     */
+    private function tenantEmbeddingKey(): ?string
+    {
+        $agent = Agent::query()->where('is_active', true)->first();
+
+        if ($agent?->api_key === null) {
+            return null;
+        }
+
+        return $agent->provider->value === config('ai.embeddings.provider')
+            ? $agent->api_key
+            : null;
+    }
+
+    /**
      * Vectorise par lots et persiste.
      *
      * Les fragments sont écrits AVANT d'obtenir leurs vecteurs : si la
@@ -96,7 +117,7 @@ class DocumentIngestionService
      */
     private function embedAndStore(Document $document, array $chunks): void
     {
-        $provider  = $this->providers->embeddings();
+        $provider  = $this->providers->embeddings($this->tenantEmbeddingKey());
         $batchSize = min(
             $provider->maxBatchSize(),
             (int) config('nonalix.knowledge.embedding_batch_size', 64),

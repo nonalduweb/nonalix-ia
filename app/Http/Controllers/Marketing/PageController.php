@@ -47,4 +47,9 @@ class PageController
     {
         return Inertia::render('Marketing/Terms');
     }
+
+    public function deleteData(): Response
+    {
+        return Inertia::render('Marketing/DeleteData');
+    }
 }

@@ -47,6 +47,7 @@ const year = new Date().getFullYear();
                     <Link href="/mentions-legales" class="transition hover:text-slate-900">Mentions légales</Link>
                     <Link href="/confidentialite" class="transition hover:text-slate-900">Confidentialité</Link>
                     <Link href="/conditions-utilisation" class="transition hover:text-slate-900">CGU</Link>
+                    <Link href="/delete-data" class="transition hover:text-slate-900">Suppression des données</Link>
                 </nav>
             </div>
         </footer>
