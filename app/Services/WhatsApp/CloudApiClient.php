@@ -165,8 +165,11 @@ class CloudApiClient
         try {
             $response = $this->request()->post($url, $payload);
         } catch (Throwable $e) {
+            // Une exception de transport peut reprendre l'en-tête
+            // Authorization, donc le jeton lui-même.
             throw new WhatsAppException(
-                'Appel à l\'API WhatsApp impossible : '.$e->getMessage(),
+                'Appel à l\'API WhatsApp impossible : '
+                    .Redaction::fromText($e->getMessage(), $this->secrets()),
                 retryable: true,
                 previous: $e,
             );
@@ -196,7 +199,13 @@ class CloudApiClient
             return $response->json() ?? [];
         }
 
-        $exception = WhatsAppException::fromResponse($response->json() ?? [], $response->status());
+        // Meta reprend le jeton dans ses messages (« Malformed access token
+        // EAAG… »). Le masquer ICI, avant même que l'exception n'existe :
+        // sinon chaque consommateur en aval — incidents, journaux de webhook,
+        // last_error — devrait y penser, et l'un d'eux oubliera.
+        $body = Redaction::fromArray($response->json() ?? [], $this->secrets());
+
+        $exception = WhatsAppException::fromResponse($body, $response->status());
 
         Log::channel('whatsapp')->error('Erreur de l\'API WhatsApp.', array_merge($exception->context(), [
             'tenant_id' => $this->account->tenant_id,
@@ -205,6 +214,20 @@ class CloudApiClient
         ]));
 
         throw $exception;
+    }
+
+    /**
+     * Valeurs à faire disparaître de tout message sortant.
+     *
+     * @return array<int, string|null>
+     */
+    private function secrets(): array
+    {
+        return [
+            $this->account->access_token,
+            $this->account->app_secret,
+            $this->account->webhook_verify_token,
+        ];
     }
 
     private function request(): PendingRequest

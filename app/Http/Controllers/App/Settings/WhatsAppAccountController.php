@@ -8,6 +8,7 @@ use App\Enums\WhatsAppAccountStatus;
 use App\Exceptions\WhatsAppException;
 use App\Models\WhatsAppAccount;
 use App\Services\Audit\AuditLogger;
+use App\Support\Redaction;
 use App\Services\Tenancy\TenantContext;
 use App\Services\WhatsApp\CloudApiClient;
 use Illuminate\Http\RedirectResponse;
@@ -161,13 +162,23 @@ class WhatsAppAccountController
                 $account->display_phone_number ?? '',
             ));
         } catch (WhatsAppException $e) {
+            // Meta reprend le jeton dans ses messages d'erreur (« Malformed
+            // access token EAAG… »). `last_error` n'étant pas chiffré, le
+            // stocker tel quel remettrait en clair, en base et à l'écran, un
+            // secret que la colonne voisine protège soigneusement.
+            $message = Redaction::fromText($e->getMessage(), [
+                $account->access_token,
+                $account->app_secret,
+                $account->webhook_verify_token,
+            ]);
+
             $account->forceFill([
                 'status'     => WhatsAppAccountStatus::Error,
-                'last_error' => mb_substr($e->getMessage(), 0, 1000),
+                'last_error' => mb_substr($message, 0, 1000),
             ])->save();
 
             return back()->withErrors([
-                'connection' => 'Échec de la connexion à Meta : '.$e->getMessage(),
+                'connection' => 'Échec de la connexion à Meta : '.$message,
             ]);
         }
     }

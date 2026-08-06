@@ -47,6 +47,56 @@ final class Redaction
         return $data;
     }
 
+    /**
+     * Retire des valeurs de secrets d'un texte libre.
+     *
+     * scrub() masque par NOM de champ ; il ne peut rien contre un secret noyé
+     * dans une phrase. Or Meta renvoie le jeton d'accès dans ses messages
+     * d'erreur (« Malformed access token EAAG… ») : stocké tel quel dans
+     * `whatsapp_accounts.last_error`, le jeton se retrouvait en clair en base
+     * et à l'écran, alors qu'il est chiffré dans sa propre colonne.
+     *
+     * @param  array<int, string|null>  $secrets  valeurs à faire disparaître
+     */
+    public static function fromText(?string $text, array $secrets): string
+    {
+        $text = (string) $text;
+
+        foreach ($secrets as $secret) {
+            // Les secrets courts produiraient des remplacements aberrants :
+            // masquer « ok » masquerait la moitié des mots du message.
+            if (is_string($secret) && mb_strlen($secret) >= 8) {
+                $text = str_replace($secret, self::MASK, $text);
+            }
+        }
+
+        return $text;
+    }
+
+    /**
+     * Applique fromText() récursivement à toutes les chaînes d'un tableau.
+     *
+     * Sert à nettoyer une réponse d'API avant d'en tirer un message d'erreur :
+     * le secret doit disparaître AVANT que l'exception n'existe, sinon chaque
+     * consommateur en aval doit y penser — et l'un d'eux oubliera.
+     *
+     * @param  array<mixed>  $data
+     * @param  array<int, string|null>  $secrets
+     * @return array<mixed>
+     */
+    public static function fromArray(array $data, array $secrets): array
+    {
+        foreach ($data as $key => $value) {
+            $data[$key] = match (true) {
+                is_array($value)  => self::fromArray($value, $secrets),
+                is_string($value) => self::fromText($value, $secrets),
+                default           => $value,
+            };
+        }
+
+        return $data;
+    }
+
     private static function isSensitive(string $key): bool
     {
         $normalized = mb_strtolower($key);
