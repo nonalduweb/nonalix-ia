@@ -9,6 +9,7 @@ use App\Contracts\AI\EmbeddingProvider;
 use App\Enums\AiProvider;
 use App\Exceptions\AiProviderException;
 use App\Models\Agent;
+use App\Services\Tenancy\TenantContext;
 use App\Services\AI\Providers\AnthropicChatProvider;
 use App\Services\AI\Providers\GeminiChatProvider;
 use App\Services\AI\Providers\GeminiEmbeddingProvider;
@@ -97,7 +98,9 @@ class AiProviderManager
         $model      = (string) config('ai.embeddings.model');
         $dimensions = (int) config('ai.embeddings.dimensions');
 
-        $key = $apiKeyOverride ?? $this->requireApiKey($provider);
+        $key = $apiKeyOverride
+            ?? $this->activeAgentKey($provider)
+            ?? $this->requireApiKey($provider);
 
         return match ($provider) {
             AiProvider::OpenAI => new OpenAiEmbeddingProvider(
@@ -143,6 +146,30 @@ class AiProviderManager
 
         return AiProvider::tryFrom($provider)
             ?? throw new InvalidArgumentException("Fournisseur IA inconnu : « {$provider} ».");
+    }
+
+    /**
+     * Clé de l'agent actif du tenant courant, si elle vaut pour ce fournisseur.
+     *
+     * Résolue ICI et non chez l'appelant : la logique avait d'abord été posée
+     * dans le service d'ingestion seul, si bien que les documents s'indexaient
+     * correctement mais que la RECHERCHE, qui doit vectoriser la question,
+     * échouait encore faute de clé. L'agent répondait alors « je n'ai pas
+     * accès » sur une base pourtant indexée. Un seul point de résolution évite
+     * que le prochain appelant retombe dans le même trou.
+     *
+     * Hors contexte de tenant (traitement plateforme), on retourne null sans
+     * rien tenter : c'est la clé de la plateforme qui doit servir.
+     */
+    private function activeAgentKey(AiProvider $provider): ?string
+    {
+        if (app(TenantContext::class)->current() === null) {
+            return null;
+        }
+
+        $agent = Agent::query()->where('is_active', true)->first();
+
+        return $agent?->provider === $provider ? $agent->api_key : null;
     }
 
     private function requireApiKey(AiProvider $provider): string
