@@ -45,14 +45,29 @@ class WhatsAppAccount extends Model
         ];
     }
 
+    /*
+     * Clé étrangère déclarée EXPLICITEMENT sur ces deux relations.
+     *
+     * Laravel la déduit du nom de la classe parente : Str::snake() applique
+     * « WhatsAppAccount » → « whats_app_account », le A majuscule de « App »
+     * créant un mot supplémentaire. Il cherchait donc whats_app_account_id
+     * quand la colonne s'appelle whatsapp_account_id, et toute lecture des
+     * modèles ou des conversations d'un compte partait en erreur SQL.
+     *
+     * Le sens inverse (belongsTo depuis MessageTemplate) fonctionnait, lui :
+     * la clé y est déduite du nom de la MÉTHODE, `whatsappAccount`, qui ne
+     * contient pas de majuscule fautive. D'où un défaut qui ne se manifestait
+     * que dans un sens.
+     */
+
     public function templates(): HasMany
     {
-        return $this->hasMany(MessageTemplate::class);
+        return $this->hasMany(MessageTemplate::class, 'whatsapp_account_id');
     }
 
     public function conversations(): HasMany
     {
-        return $this->hasMany(Conversation::class);
+        return $this->hasMany(Conversation::class, 'whatsapp_account_id');
     }
 
     public function canSend(): bool
