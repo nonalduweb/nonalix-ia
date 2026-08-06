@@ -94,7 +94,7 @@ class TwoFactorSetupController
 
         $this->emailOtp->send($user);
 
-        return back()->with('status', 'Un code vient d'être envoyé à '.$user->email.'.');
+        return back()->with('status', "Un code vient d'être envoyé à {$user->email}.");
     }
 
     /** Confirme la configuration en validant un premier code. */

@@ -39,15 +39,31 @@ if [ "$PULL" = true ]; then
     git pull --ff-only
 fi
 
-# --- 3. Construire les images -----------------------------------------------
+# --- 3. Contrôle de syntaxe PHP ----------------------------------------------
+# Une erreur d'analyse ne se voit ni à la construction de l'image, ni au
+# démarrage : elle n'éclate qu'à la première requête touchant le fichier, en
+# 500. C'est arrivé en production sur un contrôleur d'authentification.
+# `php -l` sur l'ensemble coûte quelques secondes et ferme la porte.
+if [ -n "$(docker images -q nonalix/app:latest 2>/dev/null)" ]; then
+    echo "Contrôle de syntaxe PHP…"
+    if ! docker run --rm -v "$PWD:/src" --entrypoint sh nonalix/app:latest -c \
+        'find /src/app /src/config /src/routes /src/database -name "*.php" \
+            -exec php -l {} \; 2>&1 | grep -v "^No syntax errors" | grep . && exit 1 || exit 0'
+    then
+        echo "ARRÊT : erreur de syntaxe PHP. Rien n'a été déployé."
+        exit 1
+    fi
+fi
+
+# --- 4. Construire les images -----------------------------------------------
 # `web` dépend de `app` (il en copie public/) : construire les deux ensemble.
 $COMPOSE build app web
 
-# --- 4. Migrer, conteneurs actuels encore en place ---------------------------
+# --- 5. Migrer, conteneurs actuels encore en place ---------------------------
 # --no-deps : ne pas réveiller un conteneur applicatif de l'ancienne version.
 $COMPOSE run --rm --no-deps -e RUN_MIGRATIONS=false app php artisan migrate --force
 
-# --- 5. Basculer -------------------------------------------------------------
+# --- 6. Basculer -------------------------------------------------------------
 $COMPOSE up -d --no-deps app web reverb
 
 # Horizon termine ses jobs en cours puis s'arrête ; le nouveau conteneur
@@ -55,7 +71,7 @@ $COMPOSE up -d --no-deps app web reverb
 $COMPOSE exec -T app php artisan horizon:terminate || true
 $COMPOSE up -d --no-deps horizon scheduler
 
-# --- 6. Vérifier -------------------------------------------------------------
+# --- 7. Vérifier -------------------------------------------------------------
 $COMPOSE exec -T app php artisan nonalix:health
 $COMPOSE exec -T web nginx -t
 
