@@ -9,53 +9,58 @@ use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
-use Illuminate\Queue\SerializesModels;
 
 /**
  * Nouveau message dans une conversation.
  *
  * Diffusé sur deux canaux : le fil concerné (pour l'opérateur qui l'a ouvert)
  * et la boîte de réception (pour réordonner la liste chez tous les autres).
+ *
+ * N'EMPORTE AUCUN MODÈLE ÉLOQUENT : voir MessageStatusUpdated. Un worker qui
+ * recharge un modèle cloisonné sans contexte de tenant fait échouer la
+ * diffusion, et le message n'apparaît jamais en direct.
  */
 class MessageCreated implements ShouldBroadcast
 {
     use Dispatchable;
     use InteractsWithSockets;
-    use SerializesModels;
 
-    public function __construct(public readonly Message $message) {}
+    public readonly string $tenantId;
+
+    /** @var array<string, mixed> */
+    public readonly array $payload;
+
+    public function __construct(Message $message)
+    {
+        $this->tenantId = (string) $message->tenant_id;
+
+        // Charge utile volontairement réduite : `ai_meta` (prompts, fragments
+        // RAG, coûts) ne doit pas transiter par un WebSocket vers un navigateur.
+        $this->payload = [
+            'id'              => (string) $message->id,
+            'conversation_id' => (string) $message->conversation_id,
+            'direction'       => $message->direction->value,
+            'sender_type'     => $message->sender_type->value,
+            'type'            => $message->type->value,
+            'body'            => $message->body,
+            'status'          => $message->status->value,
+            'created_at'      => $message->created_at?->toIso8601String(),
+        ];
+    }
 
     /** @return array<int, PrivateChannel> */
     public function broadcastOn(): array
     {
-        $tenantId = $this->message->tenant_id;
-
         return [
-            new PrivateChannel("tenant.{$tenantId}.conversation.{$this->message->conversation_id}"),
-            new PrivateChannel("tenant.{$tenantId}.conversations"),
+            new PrivateChannel("tenant.{$this->tenantId}.conversation.{$this->payload['conversation_id']}"),
+            new PrivateChannel("tenant.{$this->tenantId}.conversations"),
         ];
     }
 
-    /**
-     * Charge utile diffusée.
-     *
-     * Volontairement réduite : `ai_meta` (prompts, fragments RAG, coûts) ne
-     * doit pas transiter par un WebSocket vers un navigateur.
-     *
-     * @return array<string, mixed>
-     */
+    /** @return array<string, mixed> */
     public function broadcastWith(): array
     {
-        return [
-            'id'              => $this->message->id,
-            'conversation_id' => $this->message->conversation_id,
-            'direction'       => $this->message->direction->value,
-            'sender_type'     => $this->message->sender_type->value,
-            'type'            => $this->message->type->value,
-            'body'            => $this->message->body,
-            'status'          => $this->message->status->value,
-            'created_at'      => $this->message->created_at?->toIso8601String(),
-        ];
+        return $this->payload;
     }
 
     public function broadcastAs(): string
