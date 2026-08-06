@@ -55,7 +55,10 @@ class AgentController
             'api_key'           => ['nullable', 'string', 'max:255'],
             'temperature'       => ['required', 'numeric', 'min:0', 'max:2'],
             'max_tokens'        => ['required', 'integer', 'min:64', 'max:8192'],
-            'system_prompt'     => ['nullable', 'string', 'max:8000'],
+            // 20 000 caracteres, soit environ 5 000 jetons. La colonne est
+            // en `text` et n'impose rien : cette borne protege le COUT, le
+            // prompt etant renvoye au modele a chaque message.
+            'system_prompt'     => ['nullable', 'string', 'max:20000'],
             'persona'           => ['nullable', 'string', 'max:120'],
             'tone'              => ['nullable', 'string', 'max:40'],
             'language'          => ['required', 'string', 'max:10'],

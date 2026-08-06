@@ -38,6 +38,11 @@ const form = useForm({
     is_active: props.agent.is_active,
 });
 
+// Seuil d'avertissement, pas de blocage : le plafond reste 20 000. Au-delà
+// d'environ 2 000 jetons renvoyés à chaque message, le coût par conversation
+// devient sensible et mérite d'être signalé.
+const promptTooLong = computed(() => (form.system_prompt?.length ?? 0) > 8000);
+
 // Suggestions par fournisseur. Le champ reste libre : un nouveau modèle
 // sorti après ce déploiement doit pouvoir être saisi sans mise à jour.
 const MODELS = {
@@ -204,15 +209,32 @@ const submit = () =>
 
                 <textarea
                     v-model="form.system_prompt"
-                    rows="8"
+                    rows="14"
                     class="input resize-y font-mono text-sm"
-                    maxlength="8000"
+                    maxlength="20000"
                     placeholder="Décrivez le rôle de l'agent, ce qu'il doit faire et ce qu'il ne doit jamais faire."
                 />
-                <p class="text-xs text-slate-500">
-                    {{ form.system_prompt.length }} / 8000 caractères. Les informations sur
-                    l'entreprise, les horaires, les tarifs et les questions fréquentes sont
-                    ajoutées automatiquement — inutile de les répéter ici.
+                <div class="flex items-start justify-between gap-4">
+                    <p class="text-xs text-slate-500">
+                        Les informations sur l'entreprise, les horaires, les tarifs et les
+                        questions fréquentes sont ajoutées automatiquement — inutile de les
+                        répéter ici.
+                    </p>
+                    <span
+                        class="shrink-0 text-xs tabular-nums"
+                        :class="promptTooLong ? 'text-amber-600' : 'text-slate-400'"
+                    >
+                        {{ form.system_prompt.length.toLocaleString('fr-FR') }} / 20 000
+                    </span>
+                </div>
+
+                <!-- Ces instructions repartent au modele a CHAQUE message : leur
+                     longueur se paie a chaque conversation, pas une seule fois. -->
+                <p v-if="promptTooLong" class="text-xs text-amber-600">
+                    Environ {{ Math.round(form.system_prompt.length / 4).toLocaleString('fr-FR') }}
+                    jetons renvoyés au modèle à chaque message. Au-delà de quelques milliers,
+                    le coût par conversation grimpe vite : préférez la base de connaissances,
+                    qui n'envoie que les passages utiles.
                 </p>
             </section>
 
