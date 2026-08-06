@@ -82,7 +82,11 @@ return [
         'default_max_tokens'  => 1024,
         'memory_window'       => 12,  // messages conservés en contexte
         'rag_top_k'           => 5,
-        'rag_min_score'       => 0.75,
+        // 0.35 et non 0.75 : avec text-embedding-3-small, la similarité
+        // cosinus d'un extrait VRAIMENT pertinent tourne autour de 0,40 à
+        // 0,60. Un seuil à 0,75 ne laissait donc jamais rien passer et
+        // désactivait la base de connaissances en silence.
+        'rag_min_score'       => 0.35,
         'lock_seconds'        => 60,  // verrou par conversation
     ],
 

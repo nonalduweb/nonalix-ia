@@ -310,7 +310,14 @@ const submit = () =>
                     <div>
                         <label class="label" for="min_score">Seuil ({{ form.rag_min_score }})</label>
                         <input id="min_score" v-model.number="form.rag_min_score" type="range" min="0" max="1" step="0.05" class="w-full" />
-                        <p class="text-xs text-slate-500">Plus haut = extraits plus pertinents, mais moins nombreux.</p>
+                        <p class="text-xs text-slate-500">
+                            Plus haut = extraits plus pertinents, mais moins nombreux.
+                            Au-delà de 0,60, la base ne remonte quasiment plus rien.
+                        </p>
+                        <p v-if="form.rag_min_score > 0.6" class="mt-1 text-xs text-amber-600">
+                            Seuil très élevé : l'agent risque de répondre « je n'ai pas
+                            l'information » alors que vos documents la contiennent.
+                        </p>
                     </div>
                 </div>
             </section>
