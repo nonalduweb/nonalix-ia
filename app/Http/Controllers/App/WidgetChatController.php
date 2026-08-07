@@ -147,7 +147,22 @@ class WidgetChatController
             // 4. Déclencher le job de réponse de l'agent IA
             GenerateAgentReplyJob::dispatch($tenant->id, $conversation->id, $body);
 
-            return response()->json(['status' => 'queued']);
+            // 5. Dire au visiteur s'il faut attendre une réponse.
+            //
+            // Sans agent actif — entreprise qui vient de s'inscrire, agent
+            // jamais active, conversation reprise par un humain — le job se
+            // termine sans rien produire. Le visiteur restait alors devant un
+            // chat muet, indéfiniment, sans savoir si son message était parti.
+            // Le message est bien enregistré et visible dans la boîte de
+            // réception : ce que l'on annonce ici est exact.
+            $agent = $conversation->agent ?? $tenant->activeAgent();
+
+            return response()->json([
+                'status'     => 'queued',
+                'auto_reply' => $conversation->shouldAiRespond()
+                    && $agent !== null
+                    && $agent->is_active,
+            ]);
         });
     }
 }

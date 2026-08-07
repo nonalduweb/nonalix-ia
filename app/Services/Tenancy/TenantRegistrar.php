@@ -9,6 +9,7 @@ use App\Enums\UserStatus;
 use App\Exceptions\AccessCodeUnusableException;
 use App\Models\AccessCode;
 use App\Models\AccessCodeRedemption;
+use App\Models\Agent;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Audit\AuditLogger;
@@ -75,6 +76,8 @@ class TenantRegistrar
             $this->roles->provisionAll((string) $tenant->id);
             $owner->assignRole(Role::findOrCreate('owner', 'web'));
 
+            $this->createDefaultAgent($tenant);
+
             AccessCodeRedemption::create([
                 'access_code_id' => $code->id,
                 'tenant_id'      => $tenant->id,
@@ -95,6 +98,42 @@ class TenantRegistrar
 
             return ['tenant' => $tenant, 'owner' => $owner];
         });
+    }
+
+    /**
+     * Agent de départ, désactivé.
+     *
+     * L'entreprise arrivait auparavant sans aucun agent : la page de
+     * configuration en fabriquait un à la volée à la première visite. Ce
+     * filet a disparu avec le passage au multi-agents, et une entreprise
+     * pouvait installer le widget sur son site avant d'avoir créé le moindre
+     * agent — les visiteurs écrivaient alors dans un chat qui ne répondait
+     * jamais, sans le moindre signal.
+     *
+     * Créé INACTIF à dessein : rien ne doit parler aux clients d'une
+     * entreprise avant qu'elle n'ait relu le prompt et appuyé sur le bouton.
+     * C'est l'étape « Activer l'agent IA » de la liste de démarrage.
+     */
+    private function createDefaultAgent(Tenant $tenant): void
+    {
+        $agent = new Agent([
+            'name'              => 'Assistant',
+            'provider'          => config('ai.default'),
+            'model'             => config('ai.providers.'.config('ai.default').'.default_model'),
+            'temperature'       => config('ai.agent.default_temperature'),
+            'max_tokens'        => config('ai.agent.default_max_tokens'),
+            'memory_window'     => config('ai.agent.memory_window'),
+            'rag_top_k'         => config('ai.agent.rag_top_k'),
+            'rag_min_score'     => config('ai.agent.rag_min_score'),
+            'handover_keywords' => ['humain', 'conseiller', 'agent', 'quelqu\'un'],
+            'enabled_tools'     => ['request_human_handover', 'list_services', 'get_business_hours'],
+            'is_active'         => false,
+        ]);
+
+        // Renseigné explicitement : l'inscription est publique, aucun tenant
+        // n'est en contexte pour que BelongsToTenant le déduise.
+        $agent->tenant_id = $tenant->id;
+        $agent->save();
     }
 
     /**

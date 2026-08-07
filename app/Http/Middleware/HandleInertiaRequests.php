@@ -57,6 +57,12 @@ class HandleInertiaRequests extends Middleware
                 'plan'   => $tenant->plan?->name,
                 'trial_ends_at' => $tenant->trial_ends_at?->toIso8601String(),
                 'whatsapp_connected' => $tenant->whatsappAccounts()->where('status', \App\Enums\WhatsAppAccountStatus::Connected->value)->exists(),
+
+                // La boîte de réception n'est plus propre à WhatsApp depuis
+                // l'ouverture du widget web. La conditionner au seul numéro
+                // connecté privait de tout accès l'entreprise qui n'utilise
+                // que le widget — alors qu'elle y recevait bien ses messages.
+                'has_conversations' => $tenant->conversations()->exists(),
             ],
 
             // Bannière d'impersonation : l'opérateur doit toujours savoir

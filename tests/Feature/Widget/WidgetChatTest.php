@@ -124,6 +124,50 @@ it('ne renvoie l\'historique qu\'à qui présente l\'identifiant de session', fu
         ->assertJsonPath('messages.0.body', 'Message confidentiel');
 });
 
+it('annonce qu\'aucune reponse automatique n\'arrivera sans agent actif', function () {
+    Queue::fake();
+
+    // Entreprise fraichement inscrite : son agent existe mais n'a jamais ete
+    // active. Le visiteur doit l'apprendre, pas rester devant un chat muet.
+    $this->agent->forceFill(['is_active' => false])->save();
+
+    $this->postJson("http://localhost/widget/chat/{$this->tenant->id}", [
+        'session_id' => 'sans-agent',
+        'body'       => 'Bonjour ?',
+    ])->assertOk()->assertJson(['status' => 'queued', 'auto_reply' => false]);
+
+    // Le message reste enregistre : l'equipe le verra dans sa boite.
+    $this->actingForTenant($this->tenant);
+    expect(Message::query()->where('body', 'Bonjour ?')->exists())->toBeTrue();
+});
+
+it('annonce une reponse automatique quand l\'agent est actif', function () {
+    Queue::fake();
+
+    $this->postJson("http://localhost/widget/chat/{$this->tenant->id}", [
+        'session_id' => 'avec-agent',
+        'body'       => 'Bonjour ?',
+    ])->assertOk()->assertJson(['auto_reply' => true]);
+});
+
+it('annonce l\'absence de reponse automatique sur une conversation reprise par un humain', function () {
+    Queue::fake();
+
+    $this->postJson("http://localhost/widget/chat/{$this->tenant->id}", [
+        'session_id' => 'reprise',
+        'body'       => 'Premier',
+    ])->assertOk();
+
+    $this->actingForTenant($this->tenant);
+    Conversation::query()->where('channel', 'web')->first()
+        ->forceFill(['ai_enabled' => false, 'handover_at' => now()])->save();
+
+    $this->postJson("http://localhost/widget/chat/{$this->tenant->id}", [
+        'session_id' => 'reprise',
+        'body'       => 'Second',
+    ])->assertOk()->assertJson(['auto_reply' => false]);
+});
+
 it('refuse une entreprise inconnue', function () {
     $this->getJson('http://localhost/widget/config/'.\Illuminate\Support\Str::uuid()->toString())
         ->assertStatus(404);

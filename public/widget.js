@@ -31,6 +31,9 @@
     };
     let messageCount = 0;
     let pollInterval = null;
+    // L'avis « un conseiller vous repondra » n'est montre qu'une fois : le
+    // repeter a chaque message tiendrait de la litanie.
+    let autoReplyWarned = false;
 
     // 4. Injection des Styles CSS
     const style = document.createElement('style');
@@ -175,6 +178,11 @@
             line-height: 1.4;
             text-align: center;
         }
+        .nonalix-notice-info {
+            background-color: #f1f5f9;
+            border-color: #e2e8f0;
+            color: #475569;
+        }
         .nonalix-footer {
             padding: 12px;
             background-color: #ffffff;
@@ -316,18 +324,29 @@
             });
 
             if (!res.ok) {
-                notifyFailure();
+                notify("Votre message n'a pas pu être envoyé. Vérifiez votre connexion et réessayez.", 'error');
+                return;
+            }
+
+            // Aucun agent actif pour repondre : le message est bien enregistre
+            // et visible par l'equipe, mais personne ne repondra dans l'instant.
+            // Le dire vaut mieux que de laisser le visiteur devant un chat muet.
+            const data = await res.json().catch(() => ({}));
+
+            if (data.auto_reply === false && !autoReplyWarned) {
+                autoReplyWarned = true;
+                notify('Votre message a bien été transmis. Un conseiller vous répondra dès que possible.', 'info');
             }
         } catch (err) {
-            notifyFailure();
+            notify("Votre message n'a pas pu être envoyé. Vérifiez votre connexion et réessayez.", 'error');
         }
     };
 
-    /** Signale au visiteur que son message n'est pas parti. */
-    const notifyFailure = () => {
+    /** Avis discret insere dans le fil, sans se faire passer pour l'agent. */
+    const notify = (message, kind) => {
         const notice = document.createElement('div');
-        notice.className = 'nonalix-notice';
-        notice.textContent = "Votre message n'a pas pu être envoyé. Vérifiez votre connexion et réessayez.";
+        notice.className = 'nonalix-notice' + (kind === 'info' ? ' nonalix-notice-info' : '');
+        notice.textContent = message;
         messagesBox.appendChild(notice);
         scrollToBottom();
     };

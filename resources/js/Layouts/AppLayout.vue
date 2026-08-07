@@ -10,7 +10,11 @@ const impersonating = computed(() => page.props.impersonating);
 
 const navigation = computed(() => [
     { label: 'Tableau de bord', href: '/', permission: null, show: true },
-    { label: 'WhatsApp', href: '/conversations', permission: 'conversations.view', show: !!tenant.value?.whatsapp_connected },
+    // « Conversations » et non « WhatsApp » : la boîte réunit désormais le
+    // WhatsApp et le widget web. Elle s'affiche dès qu'un canal l'alimente,
+    // sans quoi une entreprise sans numéro connecté ne verrait jamais les
+    // messages recus depuis son site.
+    { label: 'Conversations', href: '/conversations', permission: 'conversations.view', show: !!tenant.value?.whatsapp_connected || !!tenant.value?.has_conversations },
     { label: 'Ventes & Automation', href: '/sales', permission: 'leads.view', show: true },
     { label: 'Contacts', href: '/contacts', permission: 'contacts.view', show: true },
     { label: 'Prospects', href: '/leads', permission: 'leads.view', show: true },
