@@ -23,6 +23,82 @@ const thread = ref(null);
 const live = ref([]);
 const showSidebar = ref(true);
 
+/*
+| Actualisation de la liste
+|------------------------------------------------------------------------------
+| Trois mecanismes complementaires, tous silencieux : aucun ne doit faire
+| clignoter la barre de progression, sauter le defilement, ni interrompre une
+| saisie en cours.
+|
+|   1. une horloge reactive, pour que « il y a 2 min » vieillisse tout seul ;
+|   2. les evenements Reverb, regroupes pour ne pas declencher une requete par
+|      message entrant sur une boite chargee ;
+|   3. un rafraichissement periodique de securite, seul filet si le socket
+|      tombe — ce qui arrive a chaque redemarrage du serveur.
+*/
+const now = ref(Date.now());
+
+const CLOCK_TICK_MS = 30_000;   // granularite affichee : la minute
+const POLL_MS = 60_000;         // filet de securite, pas le canal principal
+const COALESCE_MS = 800;        // regroupe les rafales d'evenements
+
+let clockTimer = null;
+let pollTimer = null;
+let coalesceTimer = null;
+let refreshing = false;
+
+/** Recharge la seule liste, sans rien perturber a l'ecran. */
+const refreshList = () => {
+    // Onglet en arriere-plan : inutile de consommer, on rattrapera au retour.
+    if (refreshing || document.hidden) return;
+
+    refreshing = true;
+
+    router.reload({
+        // `messages` est volontairement absent : recharger le fil ouvert le
+        // ferait sauter au bas de la conversation pendant la lecture.
+        only: ['conversations', 'counts'],
+        showProgress: false,
+        preserveScroll: true,
+        preserveState: true,
+        onFinish: () => {
+            refreshing = false;
+            now.value = Date.now();
+        },
+    });
+};
+
+/** Regroupe les rafales : dix messages d'affilee ne font qu'un rechargement. */
+const scheduleRefresh = () => {
+    if (coalesceTimer) return;
+
+    coalesceTimer = setTimeout(() => {
+        coalesceTimer = null;
+        refreshList();
+    }, COALESCE_MS);
+};
+
+let socketEverConnected = false;
+
+/** Ne resynchronise que sur une RE-connexion, jamais sur la premiere. */
+const onSocketConnected = () => {
+    if (!socketEverConnected) {
+        socketEverConnected = true;
+
+        return;
+    }
+
+    refreshList();
+};
+
+const onVisibilityChange = () => {
+    if (document.hidden) return;
+
+    // Retour sur l'onglet : c'est la que l'obsolescence se voit le plus.
+    now.value = Date.now();
+    refreshList();
+};
+
 const form = useForm({
     body: '',
     type: 'text',
@@ -87,12 +163,72 @@ const templatePreview = computed(() => {
 const scrollToBottom = () =>
     nextTick(() => {
         if (thread.value) thread.value.scrollTop = thread.value.scrollHeight;
+        hasNewBelow.value = false;
     });
 
-// Sync local messages list when props change
+/** L'operateur est-il au bas du fil, ou en train de lire plus haut ? */
+const isNearBottom = () => {
+    const el = thread.value;
+    if (!el) return true;
+
+    // Marge de tolerance : on considere « au bas » a une centaine de pixels
+    // pres, sinon le moindre pixel de defilement couperait le suivi.
+    return el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+};
+
+/** Des messages sont arrives pendant la lecture, plus bas dans le fil. */
+const hasNewBelow = ref(false);
+
+const onThreadScroll = () => {
+    if (isNearBottom()) hasNewBelow.value = false;
+};
+
+/*
+| Synchronisation du fil ouvert
+|------------------------------------------------------------------------------
+| Ce `watch` reinitialisait `live` et sautait au bas a CHAQUE changement de
+| reference du tableau, sans regarder son contenu. Il suffisait donc qu'Inertia
+| renvoie un nouveau tableau — ce qu'aucune garantie publique n'interdit, la
+| preservation des references egales etant derriere un drapeau `future`
+| desactive — pour arracher l'operateur a la ligne qu'il lisait.
+|
+| Trois regles desormais : on ne touche a rien si le contenu est identique, on
+| ne suit le bas que si l'operateur s'y trouve, et on ne perd jamais un message
+| arrive par WebSocket que le serveur n'a pas encore renvoye.
+*/
+let lastConversationId = null;
+
 watch(() => props.messages, (newMessages) => {
-    live.value = [...(newMessages ?? [])];
-    scrollToBottom();
+    const incoming = newMessages ?? [];
+    const conversationId = props.conversation?.id ?? null;
+    const switched = conversationId !== lastConversationId;
+
+    lastConversationId = conversationId;
+
+    // Changement de conversation : on repart du bas, c'est ce qu'on attend.
+    if (switched) {
+        live.value = [...incoming];
+        scrollToBottom();
+
+        return;
+    }
+
+    const sameThread = incoming.length === live.value.length
+        && incoming.every((message, index) => message.id === live.value[index]?.id);
+
+    if (sameThread) return;
+
+    const known = new Set(incoming.map((message) => message.id));
+    const pending = live.value.filter((message) => ! known.has(message.id));
+    const stick = isNearBottom();
+
+    live.value = [...incoming, ...pending];
+
+    if (stick) {
+        scrollToBottom();
+    } else {
+        hasNewBelow.value = true;
+    }
 }, { immediate: true });
 
 // Listen for global and active conversation Echo channels
@@ -113,8 +249,19 @@ const subscribeToActiveConversation = () => {
     window.Echo.private(activeChannel)
         .listen('.message.created', (event) => {
             if (live.value.some((m) => m.id === event.id)) return;
+
+            // On ne suit le bas du fil QUE si l'operateur s'y trouve deja.
+            // Sinon, un message entrant l'arrachait a la ligne qu'il etait en
+            // train de lire — le defaut le plus agacant d'une boite active.
+            const stick = isNearBottom();
+
             live.value.push(event);
-            scrollToBottom();
+
+            if (stick) {
+                scrollToBottom();
+            } else {
+                hasNewBelow.value = true;
+            }
         })
         .listen('.message.status', (event) => {
             const message = live.value.find((m) => m.id === event.id);
@@ -128,17 +275,36 @@ const subscribeToActiveConversation = () => {
 onMounted(() => {
     scrollToBottom();
 
+    // 1. L'horloge : aucun reseau, elle ne fait que vieillir l'affichage.
+    clockTimer = setInterval(() => (now.value = Date.now()), CLOCK_TICK_MS);
+
+    // 3. Le filet de securite, indispensable : sans lui, une coupure du
+    //    WebSocket fige la liste sans que l'operateur en sache rien.
+    pollTimer = setInterval(refreshList, POLL_MS);
+
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
     const tenantId = page.props.tenant?.id;
     if (!tenantId || !window.Echo) return;
 
-    // Sidebar list updates
+    // 2. Les evenements, regroupes.
     globalChannel = window.Echo.private(`tenant.${tenantId}.conversations`)
-        .listen('.message.created', () => {
-            router.reload({ only: ['conversations', 'counts'] });
-        })
-        .listen('.conversation.updated', () => {
-            router.reload({ only: ['conversations', 'counts'] });
-        });
+        .listen('.message.created', scheduleRefresh)
+        .listen('.conversation.updated', scheduleRefresh);
+
+    // Une RE-connexion signifie que des evenements ont ete manques pendant la
+    // coupure : on resynchronise sans attendre le prochain tour de scrutation.
+    // La premiere connexion est ignoree — la page vient d'etre servie avec des
+    // donnees fraiches, une requete de plus n'apporterait rien.
+    //
+    // L'etat est releve AVANT l'ecoute : Echo se connecte au chargement de
+    // l'application, souvent avant le montage de cette page. Sans ce releve,
+    // l'evenement initial nous echappait, et c'est la premiere vraie
+    // reconnexion qui aurait ete prise pour elle — donc ignoree.
+    const connection = window.Echo.connector?.pusher?.connection;
+
+    socketEverConnected = connection?.state === 'connected';
+    connection?.bind('connected', onSocketConnected);
 
     subscribeToActiveConversation();
 });
@@ -148,8 +314,15 @@ watch(() => props.conversation?.id, () => {
 });
 
 onUnmounted(() => {
+    clearInterval(clockTimer);
+    clearInterval(pollTimer);
+    clearTimeout(coalesceTimer);
+
+    document.removeEventListener('visibilitychange', onVisibilityChange);
+
     const tenantId = page.props.tenant?.id;
     if (tenantId && window.Echo) {
+        window.Echo.connector?.pusher?.connection?.unbind('connected', onSocketConnected);
         if (globalChannel) window.Echo.leave(`tenant.${tenantId}.conversations`);
         if (activeChannel) window.Echo.leave(activeChannel);
     }
@@ -263,9 +436,12 @@ const bubble = (message) => {
     return 'bg-[#d9fdd3] text-slate-800 dark:bg-[#005c4b] dark:text-slate-100 rounded-tr-none border-r-2 border-[#58b368] dark:border-[#00a884]';
 };
 
+// `now` est une horloge REACTIVE. Lire Date.now() directement figeait les
+// horodatages : Vue n'a aucune raison de re-rendre quand le temps passe, et
+// « il y a 2 min » restait affiché indéfiniment sur une boîte laissée ouverte.
 const relative = (iso) => {
     if (!iso) return '';
-    const minutes = Math.round((Date.now() - new Date(iso)) / 60000);
+    const minutes = Math.round((now.value - new Date(iso)) / 60000);
     if (minutes < 1) return "à l'instant";
     if (minutes < 60) return `il y a ${minutes} min`;
     if (minutes < 1440) return `il y a ${Math.floor(minutes / 60)} h`;
@@ -467,7 +643,22 @@ const toggleSidebar = () => {
                     </div>
                     
                     <!-- Fil de discussion -->
-                    <div ref="thread" class="flex-1 overflow-y-auto p-4 space-y-3 bg-[#efeae2] dark:bg-slate-950">
+                    <div
+                        ref="thread"
+                        class="flex-1 overflow-y-auto p-4 space-y-3 bg-[#efeae2] dark:bg-slate-950 relative"
+                        @scroll.passive="onThreadScroll"
+                    >
+                        <!-- Signale ce qui est arrivé pendant la lecture, plutôt
+                             que d'arracher l'opérateur au bas du fil. -->
+                        <button
+                            v-if="hasNewBelow"
+                            type="button"
+                            class="sticky bottom-2 left-1/2 z-10 -translate-x-1/2 rounded-full bg-brand-600 px-3.5 py-1.5 text-[11px] font-semibold text-white shadow-lg transition hover:bg-brand-700 cursor-pointer"
+                            @click="scrollToBottom"
+                        >
+                            Nouveaux messages ↓
+                        </button>
+
                         <div 
                             v-for="msg in live" 
                             :key="msg.id" 
