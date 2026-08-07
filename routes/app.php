@@ -17,6 +17,7 @@ use App\Http\Controllers\App\LeadController;
 use App\Http\Controllers\App\SalesDashboardController;
 use App\Http\Controllers\App\MessageController;
 use App\Http\Controllers\App\Settings\AgentController;
+use App\Http\Controllers\App\Settings\AgentSandboxController;
 use App\Http\Controllers\App\Settings\BillingController;
 use App\Http\Controllers\App\Settings\BusinessProfileController;
 use App\Http\Controllers\App\Settings\FaqController;
@@ -175,7 +176,6 @@ Route::middleware(['auth', 'verified', '2fa', 'tenant'])->group(function () {
     Route::resource('contacts', ContactController::class)->only(['index', 'show', 'update']);
     Route::resource('leads', LeadController::class)->only(['index', 'show', 'update']);
     Route::get('sales', [SalesDashboardController::class, 'index'])->name('sales.index');
-    Route::post('sales/install', [SalesDashboardController::class, 'install'])->name('sales.install');
 
     // --- Base de connaissances -------------------------------------------------
     Route::resource('knowledge', KnowledgeDocumentController::class)
@@ -196,11 +196,21 @@ Route::middleware(['auth', 'verified', '2fa', 'tenant'])->group(function () {
 
         Route::get('agent',                  [AgentController::class, 'index'])->name('agent.index');
         Route::get('agent/create',           [AgentController::class, 'create'])->name('agent.create');
+        Route::post('agent/install-template', [AgentController::class, 'installTemplate'])
+            ->name('agent.install-template');
         Route::post('agent',                 [AgentController::class, 'store'])->name('agent.store');
         Route::get('agent/{agent}/edit',     [AgentController::class, 'edit'])->name('agent.edit');
         Route::put('agent/{agent}',          [AgentController::class, 'update'])->name('agent.update');
         Route::delete('agent/{agent}',       [AgentController::class, 'destroy'])->name('agent.destroy');
         Route::post('agent/{agent}/preview', [AgentController::class, 'preview'])->name('agent.preview');
+
+        // Banc d'essai : un tour de conversation réel, sans rien enregistrer.
+        // Throttlé comme un appel payant, parce que c'en est un.
+        Route::post('agent/{agent}/essai',   [AgentSandboxController::class, 'chat'])
+            ->middleware('throttle:agent-sandbox')
+            ->name('agent.sandbox');
+        Route::delete('agent/{agent}/essai', [AgentSandboxController::class, 'reset'])
+            ->name('agent.sandbox.reset');
 
         Route::get('whatsapp',       [WhatsAppAccountController::class, 'edit'])->name('whatsapp.edit');
         Route::put('whatsapp',       [WhatsAppAccountController::class, 'update'])->name('whatsapp.update');

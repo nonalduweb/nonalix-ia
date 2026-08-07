@@ -12,7 +12,9 @@ const activeTab = ref('dashboard');
 
 const installTemplate = (key) => {
     if (confirm(`Voulez-vous installer ce modèle sur votre agent actif ? Cela écrasera ses instructions, son nom et ses capacités actuelles.`)) {
-        router.post('/sales/install', { template_key: key }, {
+        // Implémentation unique, partagée avec Configuration › Agent IA : la
+        // résolution de l'agent cible porte une vérification d'autorisation.
+        router.post('/settings/agent/install-template', { template_key: key }, {
             onSuccess: () => {
                 // Flash success will be handled by Layout
             }

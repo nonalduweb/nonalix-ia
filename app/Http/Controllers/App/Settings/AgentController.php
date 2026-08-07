@@ -6,6 +6,7 @@ namespace App\Http\Controllers\App\Settings;
 
 use App\Enums\AiProvider;
 use App\Models\Agent;
+use App\Services\Agent\AgentTemplateLibrary;
 use App\Services\Audit\AuditLogger;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\RedirectResponse;
@@ -19,6 +20,7 @@ class AgentController
     public function __construct(
         private readonly AuditLogger $audit,
         private readonly TenantContext $context,
+        private readonly AgentTemplateLibrary $templates,
     ) {}
 
     /** Liste des agents IA. */
@@ -32,7 +34,87 @@ class AgentController
 
         return Inertia::render('Settings/Agents/Index', [
             'agents' => $agents,
+
+            // La galerie de métiers passe devant tant qu'aucun agent n'est
+            // actif. Un nouveau client n'a aucun moyen de décider d'une
+            // température ou d'un seuil de pertinence, mais il reconnaît son
+            // métier : c'est par là qu'il doit entrer, pas par le formulaire.
+            'templates'       => array_map(
+                static fn (array $t) => [
+                    'title'       => $t['title'],
+                    'description' => $t['description'],
+                    'industry'    => $t['industry'],
+                    'name'        => $t['name'],
+                ],
+                $this->templates->all(),
+            ),
+            'hasActiveAgent' => $agents->contains('is_active', true),
         ]);
+    }
+
+    /**
+     * Installe un modèle métier sur l'agent de l'entreprise.
+     *
+     * Implémentation unique, partagée avec la page Ventes & Automation : la
+     * résolution de l'agent cible porte une vérification d'autorisation, et
+     * la dupliquer serait le meilleur moyen de l'oublier d'un côté.
+     */
+    public function installTemplate(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'template_key' => ['required', 'string', Rule::in($this->templates->keys())],
+        ]);
+
+        $agent = $this->context->currentOrFail()->activeAgent() ?? Agent::query()->first();
+
+        // Installer un modèle réécrit le prompt, le nom et les outils : c'est
+        // un acte d'encadrement, soumis à la même policy que l'édition.
+        if ($agent === null) {
+            abort_unless($request->user()->can('create', Agent::class), 403);
+
+            $agent = new Agent($this->platformDefaults());
+            $agent->tenant_id = $request->user()->tenant_id;
+            $agent->save();
+        } else {
+            abort_unless($request->user()->can('update', $agent), 403);
+        }
+
+        $template = $this->templates->install($agent, $validated['template_key']);
+
+        $this->audit->log('agent.template_installed', $agent, [
+            'after' => ['template' => $validated['template_key']],
+        ]);
+
+        return redirect()
+            ->route('settings.agent.edit', $agent)
+            ->with('success', sprintf(
+                'Modèle « %s » installé. Essayez votre agent ci-dessous avant de le montrer à vos clients.',
+                $template['title'],
+            ));
+    }
+
+    /**
+     * Réglages de plateforme d'un agent neuf.
+     *
+     * Fournisseur, modèle et bornes de coût : rien que le client ait à
+     * choisir. Ils vivent dans config/ai.php.
+     *
+     * @return array<string, mixed>
+     */
+    private function platformDefaults(): array
+    {
+        $provider = config('ai.default');
+
+        return [
+            'name'          => 'Assistant',
+            'provider'      => $provider,
+            'model'         => config('ai.providers.'.$provider.'.default_model'),
+            'temperature'   => config('ai.agent.default_temperature'),
+            'max_tokens'    => config('ai.agent.default_max_tokens'),
+            'memory_window' => config('ai.agent.memory_window'),
+            'rag_top_k'     => config('ai.agent.rag_top_k'),
+            'rag_min_score' => config('ai.agent.rag_min_score'),
+        ];
     }
 
     /** Formulaire de création d'un agent. */

@@ -43,7 +43,8 @@ class AgentRunner
     ) {}
 
     /**
-     * @param  array<string, AgentTool>  $tools  indexés par nom
+     * @param  array<string, AgentTool>   $tools    indexés par nom
+     * @param  array<int, ChatMessage>|null  $history  remplace la mémoire lue en base
      * @return array{content: ?string, metadata: array<string, mixed>, handover: bool}
      */
     public function run(
@@ -51,6 +52,7 @@ class AgentRunner
         Agent $agent,
         string $incomingText,
         array $tools = [],
+        ?array $history = null,
     ): array {
         $startedAt  = microtime(true);
         $totalUsage = new TokenUsage;
@@ -70,8 +72,11 @@ class AgentRunner
 
         $request = new ChatRequest(
             model: $agent->model ?: $provider->defaultModel(),
+            // Un historique fourni court-circuite la lecture en base : c'est ce
+            // qui permet au banc d'essai de faire tourner un vrai tour de
+            // conversation sans écrire la moindre ligne.
             messages: [
-                ...$this->memory->forConversation($conversation, $agent),
+                ...($history ?? $this->memory->forConversation($conversation, $agent)),
                 ChatMessage::user($incomingText),
             ],
             system: $this->prompts->build($agent, $chunks),

@@ -1,0 +1,200 @@
+[
+  {
+    "name": "[Nonalix IA] Dispatcher outils agent",
+    "active": false,
+    "settings": { "executionOrder": "v1" },
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "nonalix-ia",
+          "responseMode": "responseNode",
+          "options": {}
+        },
+        "id": "a1000000-0000-4000-8000-000000000001",
+        "name": "Webhook Nonalix IA",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2,
+        "position": [-560, 300],
+        "webhookId": "b2000000-0000-4000-8000-000000000001"
+      },
+      {
+        "parameters": {
+          "jsCode": "// L'evaluateur d'expressions de n8n refuse l'identifiant `arguments`,\n// mot reserve de JavaScript — et c'est justement le nom de la cle envoyee\n// par Nonalix IA. On la renomme en `args` des l'entree, une fois pour\n// toutes, plutot que d'ecrire du contournement dans chaque noeud.\n// Notation entre crochets ici aussi : `body.arguments` serait rejete.\nconst b = $json['body'] ?? {};\nconst a = b['arguments'] ?? {};\n\nreturn [{ json: {\n  action:          b['action'] ?? '',\n  tenant_id:       b['tenant_id'] ?? null,\n  conversation_id: b['conversation_id'] ?? null,\n  contact_id:      b['contact_id'] ?? null,\n  wa_id:           b['wa_id'] ?? null,\n  args:            a,\n} }];"
+        },
+        "id": "a1000000-0000-4000-8000-00000000000b",
+        "name": "Normaliser payload",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [-460, 300]
+      },
+      {
+        "parameters": {
+          "rules": {
+            "values": [
+              {
+                "conditions": {
+                  "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
+                  "conditions": [
+                    {
+                      "id": "c1",
+                      "leftValue": "={{ $json.action }}",
+                      "rightValue": "create_prospect",
+                      "operator": { "type": "string", "operation": "equals" }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "create_prospect"
+              },
+              {
+                "conditions": {
+                  "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
+                  "conditions": [
+                    {
+                      "id": "c2",
+                      "leftValue": "={{ $json.action }}",
+                      "rightValue": "send_email",
+                      "operator": { "type": "string", "operation": "equals" }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "send_email"
+              }
+            ]
+          },
+          "looseTypeValidation": true,
+          "options": { "fallbackOutput": "extra" }
+        },
+        "id": "a1000000-0000-4000-8000-000000000002",
+        "name": "Router selon action",
+        "type": "n8n-nodes-base.switch",
+        "typeVersion": 3.2,
+        "position": [-340, 300]
+      },
+
+      {
+        "parameters": {
+          "chatId": "REMPLACER_CHAT_ID",
+          "text": "=🟢 Nouveau prospect — agent IA Nonalix\n\nNom : {{ $json.args.name || 'non precise' }}\nBesoin : {{ $json.args.need || 'non precise' }}\nBudget : {{ $json.args.budget || 'non precise' }}\n\nContact : {{ $json.wa_id || $json.contact_id }}\nConversation : {{ $json.conversation_id }}",
+          "additionalFields": { "appendAttribution": false }
+        },
+        "id": "a1000000-0000-4000-8000-000000000003",
+        "name": "Notifier equipe (prospect)",
+        "type": "n8n-nodes-base.telegram",
+        "typeVersion": 1.2,
+        "position": [-100, 120],
+        "credentials": {
+          "telegramApi": { "id": "REMPLACER_ID_TELEGRAM", "name": "REMPLACER — votre identifiant Telegram" }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "// Message relu par le modele, pas par un humain : factuel et compact.\nreturn [{ json: { message: \"Le prospect a bien ete transmis a l'equipe commerciale. Confirme-le au client et poursuis la conversation.\" } }];"
+        },
+        "id": "a1000000-0000-4000-8000-000000000008",
+        "name": "Message prospect",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [140, 120]
+      },
+      {
+        "parameters": { "respondWith": "firstIncomingItem", "options": {} },
+        "id": "a1000000-0000-4000-8000-000000000005",
+        "name": "Reponse prospect (200)",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.1,
+        "position": [380, 120]
+      },
+
+      {
+        "parameters": {
+          "fromEmail": "REMPLACER@votre-domaine.fr",
+          "toEmail": "={{ $json.args.email }}",
+          "subject": "={{ $json.args.subject }}",
+          "emailFormat": "text",
+          "text": "={{ $json.args.body }}",
+          "options": {}
+        },
+        "id": "a1000000-0000-4000-8000-000000000004",
+        "name": "Envoyer e-mail",
+        "type": "n8n-nodes-base.emailSend",
+        "typeVersion": 2.1,
+        "position": [-100, 300],
+        "credentials": {
+          "smtp": { "id": "REMPLACER_ID_SMTP", "name": "REMPLACER — votre identifiant SMTP" }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const to = $('Normaliser payload').first().json.args.email;\nreturn [{ json: { message: `L'e-mail a bien ete envoye a ${to}. Confirme-le au client.` } }];"
+        },
+        "id": "a1000000-0000-4000-8000-000000000009",
+        "name": "Message e-mail",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [140, 300]
+      },
+      {
+        "parameters": { "respondWith": "firstIncomingItem", "options": {} },
+        "id": "a1000000-0000-4000-8000-000000000006",
+        "name": "Reponse e-mail (200)",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.1,
+        "position": [380, 300]
+      },
+
+      {
+        "parameters": {
+          "jsCode": "// 501 et NON 200 : cote Laravel, un 2xx vaut succes et ferait inscrire\n// un faux rendez-vous ou un faux devis dans les metriques commerciales.\nconst action = $json.action ?? 'inconnue';\nreturn [{ json: { message: `Action ${action} non encore raccordee a un systeme metier.` } }];"
+        },
+        "id": "a1000000-0000-4000-8000-00000000000a",
+        "name": "Message non raccorde",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [-100, 500]
+      },
+      {
+        "parameters": { "respondWith": "firstIncomingItem", "options": { "responseCode": 501 } },
+        "id": "a1000000-0000-4000-8000-000000000007",
+        "name": "Reponse non raccordee (501)",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.1,
+        "position": [140, 500]
+      }
+    ],
+    "connections": {
+      "Webhook Nonalix IA": {
+        "main": [[{ "node": "Normaliser payload", "type": "main", "index": 0 }]]
+      },
+      "Normaliser payload": {
+        "main": [[{ "node": "Router selon action", "type": "main", "index": 0 }]]
+      },
+      "Router selon action": {
+        "main": [
+          [{ "node": "Notifier equipe (prospect)", "type": "main", "index": 0 }],
+          [{ "node": "Envoyer e-mail", "type": "main", "index": 0 }],
+          [{ "node": "Message non raccorde", "type": "main", "index": 0 }]
+        ]
+      },
+      "Notifier equipe (prospect)": {
+        "main": [[{ "node": "Message prospect", "type": "main", "index": 0 }]]
+      },
+      "Message prospect": {
+        "main": [[{ "node": "Reponse prospect (200)", "type": "main", "index": 0 }]]
+      },
+      "Envoyer e-mail": {
+        "main": [[{ "node": "Message e-mail", "type": "main", "index": 0 }]]
+      },
+      "Message e-mail": {
+        "main": [[{ "node": "Reponse e-mail (200)", "type": "main", "index": 0 }]]
+      },
+      "Message non raccorde": {
+        "main": [[{ "node": "Reponse non raccordee (501)", "type": "main", "index": 0 }]]
+      }
+    }
+  }
+]

@@ -78,6 +78,14 @@ class AppServiceProvider extends ServiceProvider
             ];
         });
 
+        // Banc d'essai de l'agent : chaque message est un appel facturé au
+        // modèle. Le plafond laisse largement de quoi éprouver un agent, sans
+        // qu'un onglet laissé ouvert ne vide le quota du client.
+        RateLimiter::for('agent-sandbox', fn (Request $request) => [
+            Limit::perMinute(20)->by($request->user()?->id ?: $request->ip()),
+            Limit::perHour(200)->by($request->user()?->tenant_id ?: $request->ip()),
+        ]);
+
         // Connexion : la clé combine e-mail et IP. Ne cibler que l'IP
         // permettrait de bloquer un utilisateur légitime derrière un NAT
         // partagé ; ne cibler que l'e-mail laisserait passer le bourrage

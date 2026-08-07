@@ -106,6 +106,71 @@ const submit = () => {
         .transform((data) => (data.api_key === '' ? { ...data, api_key: undefined } : data))
         .submit(isNew.value ? 'post' : 'put', action, { preserveScroll: true });
 };
+
+// -- Reglages avances ---------------------------------------------------------
+// Fournisseur, modele, temperature, fenetre de memoire, seuils du RAG, webhook :
+// rien qu'un restaurateur puisse arbitrer. Replies par defaut ; les valeurs de
+// config/ai.php sont saines.
+const showAdvanced = ref(false);
+
+// -- Banc d'essai -------------------------------------------------------------
+// Le seul moyen d'entendre son agent etait de publier le widget sur son site et
+// de lui ecrire depuis sa propre vitrine. Ici, l'essai reste dans l'application
+// et n'ecrit rien : ni contact, ni conversation, ni message.
+const trialMessages = ref([]);
+const trialInput = ref('');
+const trialSending = ref(false);
+const trialError = ref(null);
+
+const csrfToken = () => {
+    const raw = document.cookie.split('; ').find((c) => c.startsWith('XSRF-TOKEN='));
+    return raw ? decodeURIComponent(raw.split('=')[1]) : '';
+};
+
+const sendTrial = async () => {
+    const text = trialInput.value.trim();
+    if (!text || trialSending.value) return;
+
+    trialInput.value = '';
+    trialError.value = null;
+    trialMessages.value.push({ role: 'user', content: text });
+    trialSending.value = true;
+
+    try {
+        const res = await fetch(`/settings/agent/${props.agent.id}/essai`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-XSRF-TOKEN': csrfToken(),
+            },
+            body: JSON.stringify({ message: text }),
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+            trialError.value = data.error ?? "L'agent n'a pas pu repondre.";
+            return;
+        }
+
+        trialMessages.value.push({ role: 'assistant', content: data.reply, debug: data.debug });
+    } catch (err) {
+        trialError.value = 'Connexion interrompue. Reessayez.';
+    } finally {
+        trialSending.value = false;
+    }
+};
+
+const resetTrial = async () => {
+    trialMessages.value = [];
+    trialError.value = null;
+
+    await fetch(`/settings/agent/${props.agent.id}/essai`, {
+        method: 'DELETE',
+        headers: { 'Accept': 'application/json', 'X-XSRF-TOKEN': csrfToken() },
+    }).catch(() => {});
+};
 </script>
 
 <template>
@@ -120,6 +185,78 @@ const submit = () => {
                 {{ isNew ? 'Créer un nouvel Agent IA' : `Configurer l'Agent : ${agent.name}` }}
             </h1>
         </div>
+
+        <!-- Banc d'essai : voir le résultat avant de le montrer à ses clients -->
+        <section v-if="!isNew" class="card mb-6 space-y-4">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <h2 class="text-sm font-semibold">Essayer votre agent</h2>
+                    <p class="mt-1 text-xs text-slate-500">
+                        Parlez-lui comme le ferait un de vos clients. Rien n'est enregistré et personne d'autre ne le voit.
+                        L'essai utilise la <strong>version enregistrée</strong> : pensez à enregistrer vos modifications avant de tester.
+                    </p>
+                </div>
+                <button
+                    v-if="trialMessages.length"
+                    type="button"
+                    class="shrink-0 text-xs text-slate-400 hover:text-slate-600 transition cursor-pointer"
+                    @click="resetTrial"
+                >
+                    Recommencer
+                </button>
+            </div>
+
+            <div class="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/40">
+                <div class="max-h-80 space-y-3 overflow-y-auto text-sm">
+                    <!-- Le message d'accueil est ce que voit d'abord chaque visiteur -->
+                    <div class="max-w-[85%] rounded-xl rounded-bl-sm border border-slate-200 bg-white px-3.5 py-2.5 text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+                        {{ form.greeting_message || 'Bonjour ! Comment puis-je vous aider ?' }}
+                    </div>
+
+                    <div
+                        v-for="(msg, index) in trialMessages"
+                        :key="index"
+                        class="max-w-[85%] rounded-xl px-3.5 py-2.5 whitespace-pre-wrap"
+                        :class="msg.role === 'user'
+                            ? 'ml-auto rounded-br-sm bg-brand-600 text-white'
+                            : 'rounded-bl-sm border border-slate-200 bg-white text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300'"
+                    >
+                        {{ msg.content }}
+                        <span
+                            v-if="msg.role === 'assistant' && msg.debug"
+                            class="mt-1.5 block text-[10px] text-slate-400"
+                        >
+                            {{ msg.debug.rag_chunks }} extrait(s) de vos documents · {{ msg.debug.total_ms }} ms
+                        </span>
+                    </div>
+
+                    <div v-if="trialSending" class="text-xs text-slate-400 italic">L'agent rédige sa réponse…</div>
+                </div>
+
+                <p v-if="trialError" class="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700 dark:bg-red-950/40 dark:text-red-300">
+                    {{ trialError }}
+                </p>
+
+                <div class="mt-4 flex gap-2">
+                    <input
+                        v-model="trialInput"
+                        type="text"
+                        class="input py-2 text-sm"
+                        placeholder="Écrivez comme le ferait un client…"
+                        :disabled="trialSending"
+                        @keydown.enter.prevent="sendTrial"
+                    />
+                    <button
+                        type="button"
+                        class="btn-primary shrink-0 px-4 py-2 text-xs font-semibold cursor-pointer"
+                        :disabled="trialSending || !trialInput.trim()"
+                        @click="sendTrial"
+                    >
+                        Envoyer
+                    </button>
+                </div>
+            </div>
+        </section>
 
         <form class="grid gap-6 lg:grid-cols-2 pb-12" @submit.prevent="submit">
             <!-- Identité -->
@@ -144,6 +281,14 @@ const submit = () => {
                 </div>
 
                 <div>
+                    <label class="label" for="greeting">Message d'accueil</label>
+                    <textarea id="greeting" v-model="form.greeting_message" rows="2" class="input resize-none" />
+                    <p class="mt-1 text-xs text-slate-500">
+                        La première chose que lit un visiteur qui ouvre le chat sur votre site.
+                    </p>
+                </div>
+
+                <div>
                     <label class="label" for="fallback">Message de repli</label>
                     <textarea id="fallback" v-model="form.fallback_message" rows="2" class="input resize-none" />
                     <p class="mt-1 text-xs text-slate-500">
@@ -161,64 +306,6 @@ const submit = () => {
                         <input v-model="form.active_hours_only" type="checkbox" />
                         <span>Ne répondre que pendant les horaires d'ouverture</span>
                     </label>
-                </div>
-            </section>
-
-            <!-- Modèle -->
-            <section class="card space-y-4">
-                <h2 class="text-sm font-semibold">Fournisseur & Modèle LLM</h2>
-
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="label" for="provider">Fournisseur</label>
-                        <select id="provider" v-model="form.provider" class="input">
-                            <option v-for="provider in providers" :key="provider.value" :value="provider.value">
-                                {{ provider.label }}
-                            </option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="label" for="model">Modèle</label>
-                        <input id="model" v-model="form.model" type="text" class="input" list="models" required />
-                        <datalist id="models">
-                            <option v-for="model in suggestedModels" :key="model" :value="model" />
-                        </datalist>
-                    </div>
-                </div>
-                <p v-if="form.errors.model" class="text-sm text-red-600">{{ form.errors.model }}</p>
-
-                <div>
-                    <label class="label" for="api_key">Clé API personnelle (optionnelle)</label>
-                    <input
-                        id="api_key"
-                        v-model="form.api_key"
-                        type="password"
-                        class="input"
-                        autocomplete="off"
-                        :placeholder="hasApiKey ? '•••••••• (enregistrée)' : 'Laisser vide pour utiliser les clés Nonalix'"
-                    />
-                    <p class="mt-1 text-xs text-slate-500">
-                        Si vide, l'application utilise la clé générale de la plateforme (crédit facturé par Nonalix).
-                    </p>
-                </div>
-
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="label" for="temperature">Créativité ({{ form.temperature }})</label>
-                        <input id="temperature" v-model.number="form.temperature" type="range" min="0" max="1" step="0.05" class="w-full" />
-                    </div>
-                    <div>
-                        <label class="label" for="max_tokens">Longueur max (Tokens)</label>
-                        <input id="max_tokens" v-model.number="form.max_tokens" type="number" min="64" max="8192" class="input" />
-                    </div>
-                </div>
-
-                <div>
-                    <label class="label" for="memory">Fenêtre mémoire ({{ form.memory_window }} messages)</label>
-                    <input id="memory" v-model.number="form.memory_window" type="range" min="2" max="30" class="w-full" />
-                    <p class="text-xs text-slate-500">
-                        Historique de discussion réinjecté au modèle à chaque message.
-                    </p>
                 </div>
             </section>
 
@@ -312,8 +399,109 @@ const submit = () => {
 
                 <hr class="border-slate-100 dark:border-slate-800" />
 
-                <!-- Actions n8n -->
-                <div class="space-y-3">
+                <label class="flex items-center gap-2 text-sm cursor-pointer select-none">
+                    <input v-model="form.rag_enabled" type="checkbox" />
+                    <span>Utiliser la base de connaissances (RAG)</span>
+                </label>
+
+            </section>
+
+            <!-- Réglages avancés : repliés, parce qu'un client n'a pas à les arbitrer -->
+            <section class="card lg:col-span-2">
+                <button
+                    type="button"
+                    class="flex w-full items-center justify-between gap-4 text-left cursor-pointer"
+                    @click="showAdvanced = !showAdvanced"
+                >
+                    <span>
+                        <span class="text-sm font-semibold">Réglages avancés</span>
+                        <span class="mt-1 block text-xs text-slate-500">
+                            Fournisseur, modèle, coût, mémoire, finesse de la base de connaissances et automatisations n8n.
+                            Les valeurs par défaut conviennent à la très grande majorité des usages — inutile d'y toucher pour démarrer.
+                        </span>
+                    </span>
+                    <span class="shrink-0 text-lg font-semibold text-slate-400">{{ showAdvanced ? '−' : '+' }}</span>
+                </button>
+
+                <div v-show="showAdvanced" class="mt-6 grid gap-8 border-t border-slate-100 pt-6 lg:grid-cols-2 dark:border-slate-800">
+                    <div class="space-y-4">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Fournisseur &amp; modèle</h3>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="label" for="provider">Fournisseur</label>
+                        <select id="provider" v-model="form.provider" class="input">
+                            <option v-for="provider in providers" :key="provider.value" :value="provider.value">
+                                {{ provider.label }}
+                            </option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="label" for="model">Modèle</label>
+                        <input id="model" v-model="form.model" type="text" class="input" list="models" required />
+                        <datalist id="models">
+                            <option v-for="model in suggestedModels" :key="model" :value="model" />
+                        </datalist>
+                    </div>
+                </div>
+                <p v-if="form.errors.model" class="text-sm text-red-600">{{ form.errors.model }}</p>
+
+                <div>
+                    <label class="label" for="api_key">Clé API personnelle (optionnelle)</label>
+                    <input
+                        id="api_key"
+                        v-model="form.api_key"
+                        type="password"
+                        class="input"
+                        autocomplete="off"
+                        :placeholder="hasApiKey ? '•••••••• (enregistrée)' : 'Laisser vide pour utiliser les clés Nonalix'"
+                    />
+                    <p class="mt-1 text-xs text-slate-500">
+                        Si vide, l'application utilise la clé générale de la plateforme (crédit facturé par Nonalix).
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="label" for="temperature">Créativité ({{ form.temperature }})</label>
+                        <input id="temperature" v-model.number="form.temperature" type="range" min="0" max="1" step="0.05" class="w-full" />
+                    </div>
+                    <div>
+                        <label class="label" for="max_tokens">Longueur max (Tokens)</label>
+                        <input id="max_tokens" v-model.number="form.max_tokens" type="number" min="64" max="8192" class="input" />
+                    </div>
+                </div>
+
+                <div>
+                    <label class="label" for="memory">Fenêtre mémoire ({{ form.memory_window }} messages)</label>
+                    <input id="memory" v-model.number="form.memory_window" type="range" min="2" max="30" class="w-full" />
+                    <p class="text-xs text-slate-500">
+                        Historique de discussion réinjecté au modèle à chaque message.
+                    </p>
+                </div>
+                    </div>
+
+                    <div class="space-y-5">
+                        <div class="space-y-3">
+                            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Finesse de la base de connaissances</h3>
+                            <p v-if="!form.rag_enabled" class="text-xs text-slate-400 italic">
+                                La base de connaissances est désactivée dans les capacités de l'agent.
+                            </p>
+                            <div v-else class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="label text-xs" for="top_k">Extraits maximum ({{ form.rag_top_k }})</label>
+                        <input id="top_k" v-model.number="form.rag_top_k" type="range" min="1" max="20" class="w-full" />
+                    </div>
+                    <div>
+                        <label class="label text-xs" for="min_score">Seuil de similarité ({{ form.rag_min_score }})</label>
+                        <input id="min_score" v-model.number="form.rag_min_score" type="range" min="0" max="1" step="0.05" class="w-full" />
+                    </div>
+                            </div>
+                        </div>
+
+                        <hr class="border-slate-100 dark:border-slate-800" />
+
+                        <div class="space-y-3">
                     <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Actions Automatisées (via n8n)</h3>
                     
                     <div class="mb-3">
@@ -345,23 +533,7 @@ const submit = () => {
                             </span>
                         </label>
                     </div>
-                </div>
-
-                <hr class="border-slate-100 dark:border-slate-800" />
-
-                <label class="flex items-center gap-2 text-sm cursor-pointer select-none">
-                    <input v-model="form.rag_enabled" type="checkbox" />
-                    <span>Utiliser la base de connaissances (RAG)</span>
-                </label>
-
-                <div v-if="form.rag_enabled" class="grid grid-cols-2 gap-3 pt-1">
-                    <div>
-                        <label class="label text-xs" for="top_k">Extraits maximum ({{ form.rag_top_k }})</label>
-                        <input id="top_k" v-model.number="form.rag_top_k" type="range" min="1" max="20" class="w-full" />
-                    </div>
-                    <div>
-                        <label class="label text-xs" for="min_score">Seuil de similarité ({{ form.rag_min_score }})</label>
-                        <input id="min_score" v-model.number="form.rag_min_score" type="range" min="0" max="1" step="0.05" class="w-full" />
+                        </div>
                     </div>
                 </div>
             </section>
