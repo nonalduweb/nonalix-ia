@@ -7,6 +7,7 @@ namespace App\Http\Controllers\App;
 use App\Enums\ConversationStatus;
 use App\Events\ConversationUpdated;
 use App\Models\Conversation;
+use App\Models\Agent;
 use App\Models\User;
 use App\Services\Audit\AuditLogger;
 use Illuminate\Http\RedirectResponse;
@@ -48,6 +49,7 @@ class ConversationController
             'notes'         => [],
             'lead'          => null,
             'operators'     => User::query()->ofTenant($request->user()->tenant_id)->select('id', 'name')->get(),
+            'agents'        => Agent::query()->select('id', 'name')->get(),
             'windowOpen'    => false,
             'windowExpires' => null,
             'templates'     => [],
@@ -96,6 +98,7 @@ class ConversationController
                 ? \App\Models\Lead::query()->where('contact_id', $conversation->contact_id)->open()->first()
                 : null,
             'operators'     => User::query()->ofTenant($conversation->tenant_id)->select('id', 'name')->get(),
+            'agents'        => Agent::query()->select('id', 'name')->get(),
             'windowOpen'    => $conversation->isWithinServiceWindow(),
             'windowExpires' => $conversation->window_expires_at?->toIso8601String(),
             'templates'     => $conversation->whatsappAccount
@@ -192,6 +195,34 @@ class ConversationController
         ConversationUpdated::dispatch($conversation);
 
         return back()->with('success', 'L\'agent IA a repris la main.');
+    }
+
+    /** Attribution à un agent IA. */
+    public function assignAgent(Request $request, Conversation $conversation): RedirectResponse
+    {
+        $this->authorizeAction($request, 'update', $conversation);
+
+        $validated = $request->validate([
+            'agent_id' => ['nullable', 'uuid'],
+        ]);
+
+        if ($validated['agent_id'] !== null) {
+            $belongs = Agent::query()
+                ->where('tenant_id', $conversation->tenant_id)
+                ->whereKey($validated['agent_id'])
+                ->exists();
+
+            abort_unless($belongs, 422, 'Cet agent n\'appartient pas à votre entreprise.');
+        }
+
+        $conversation->forceFill(['agent_id' => $validated['agent_id']])->save();
+
+        $this->audit->log('conversation.agent_assigned', $conversation, [
+            'after' => ['agent_id' => $validated['agent_id']],
+        ]);
+        ConversationUpdated::dispatch($conversation);
+
+        return back()->with('success', 'Agent IA mis à jour.');
     }
 
     private function authorizeAction(Request $request, string $ability, mixed $target): void

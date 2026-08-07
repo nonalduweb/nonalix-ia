@@ -37,6 +37,13 @@ return Application::configure(basePath: dirname(__DIR__))
                 ->middleware('web')
                 ->group(base_path('routes/marketing.php'));
 
+            // ---- Widget de chat public : app.nonalixia.com/widget/* --------
+            // Déclaré AVANT l'espace client : ces routes sont anonymes et
+            // inter-origines, elles ne doivent porter ni session ni CSRF.
+            Route::domain($domains['app'])
+                ->middleware('widget')
+                ->group(base_path('routes/widget.php'));
+
             // ---- Espace client : app.nonalixia.com -------------------------
             Route::domain($domains['app'])
                 ->middleware('web')
@@ -82,6 +89,16 @@ return Application::configure(basePath: dirname(__DIR__))
             'throttle:webhooks',
         ]);
 
+        // Pile dédiée au widget de chat public. Sans session : le widget
+        // n'envoie aucun cookie, et laisser StartSession ici ferait naître une
+        // session jetable à chaque sondage du navigateur (toutes les 3 s).
+        // Le throttle n'est pas cosmétique : ces routes créent des lignes en
+        // base et déclenchent des générations facturées.
+        $middleware->group('widget', [
+            InjectRequestContext::class,
+            'throttle:widget',
+        ]);
+
         // ORDRE CRITIQUE : SubstituteBindings appartient au groupe `web` et
         // s'exécuterait donc AVANT le middleware de route `tenant`. Le route
         // model binding interrogerait alors des modèles cloisonnés sans tenant
@@ -107,8 +124,15 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Les webhooks Meta n'ont pas de jeton CSRF (exclusion redondante avec
         // le groupe dédié, conservée en défense en profondeur).
+        //
+        // Le widget de chat s'exécute sur le site du client, sur une origine
+        // tierce : il n'a ni session ni jeton CSRF à présenter. Son API est
+        // volontairement anonyme et ne fait qu'ouvrir une conversation pour un
+        // identifiant de session opaque — aucune donnée existante n'est
+        // accessible sans connaître cet identifiant.
         $middleware->validateCsrfTokens(except: [
             'webhooks/*',
+            'widget/*',
         ]);
 
         $middleware->trustProxies(at: '*');

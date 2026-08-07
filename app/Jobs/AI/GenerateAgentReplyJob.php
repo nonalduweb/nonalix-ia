@@ -80,7 +80,7 @@ class GenerateAgentReplyJob implements ShouldQueue
                     return;
                 }
 
-                $agent = $tenant->activeAgent();
+                $agent = $conversation->agent ?? $tenant->activeAgent();
 
                 if ($agent === null || ! $agent->is_active) {
                     return;
@@ -186,7 +186,11 @@ class GenerateAgentReplyJob implements ShouldQueue
 
         MessageCreated::dispatch($message);
 
-        SendWhatsAppMessageJob::dispatch($tenantId, $message->id)->onQueue('whatsapp');
+        if ($conversation->channel === 'web') {
+            $message->update(['status' => MessageStatus::Delivered]);
+        } else {
+            SendWhatsAppMessageJob::dispatch($tenantId, $message->id)->onQueue('whatsapp');
+        }
     }
 
     private function handOver(Conversation $conversation, string $reason): void
@@ -219,7 +223,11 @@ class GenerateAgentReplyJob implements ShouldQueue
             'status'          => MessageStatus::Queued,
         ]);
 
-        SendWhatsAppMessageJob::dispatch($tenant->id, $message->id)->onQueue('whatsapp');
+        if ($conversation->channel === 'web') {
+            $message->update(['status' => MessageStatus::Delivered]);
+        } else {
+            SendWhatsAppMessageJob::dispatch($tenant->id, $message->id)->onQueue('whatsapp');
+        }
     }
 
     private function isWithinBusinessHours(): bool

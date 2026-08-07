@@ -24,7 +24,7 @@ class PermissionSeeder extends Seeder
         'contacts'      => ['view', 'create', 'update', 'delete'],
         'leads'         => ['view', 'create', 'update', 'delete'],
         'knowledge'     => ['view', 'create', 'update', 'delete'],
-        'agent'         => ['view', 'update'],
+        'agent'         => ['view', 'create', 'update', 'delete'],
         'whatsapp'      => ['view', 'update'],
         'settings'      => ['view', 'update'],
         'users'         => ['view', 'create', 'update', 'delete'],

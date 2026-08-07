@@ -14,13 +14,16 @@ use App\Http\Controllers\App\ConversationNoteController;
 use App\Http\Controllers\App\DashboardController;
 use App\Http\Controllers\App\KnowledgeDocumentController;
 use App\Http\Controllers\App\LeadController;
+use App\Http\Controllers\App\SalesDashboardController;
 use App\Http\Controllers\App\MessageController;
 use App\Http\Controllers\App\Settings\AgentController;
+use App\Http\Controllers\App\Settings\BillingController;
 use App\Http\Controllers\App\Settings\BusinessProfileController;
 use App\Http\Controllers\App\Settings\FaqController;
 use App\Http\Controllers\App\Settings\ServiceController;
 use App\Http\Controllers\App\Settings\TeamUserController;
 use App\Http\Controllers\App\Settings\WhatsAppAccountController;
+use App\Http\Controllers\App\Settings\WidgetSettingsController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -157,6 +160,7 @@ Route::middleware(['auth', 'verified', '2fa', 'tenant'])->group(function () {
     Route::get('conversations/{conversation}', [ConversationController::class, 'show'])->name('conversations.show');
     Route::patch('conversations/{conversation}', [ConversationController::class, 'update'])->name('conversations.update');
     Route::post('conversations/{conversation}/assign', [ConversationController::class, 'assign'])->name('conversations.assign');
+    Route::post('conversations/{conversation}/assign-agent', [ConversationController::class, 'assignAgent'])->name('conversations.assign-agent');
     Route::post('conversations/{conversation}/handover', [ConversationController::class, 'handover'])->name('conversations.handover');
     Route::post('conversations/{conversation}/resume-ai', [ConversationController::class, 'resumeAi'])->name('conversations.resume-ai');
 
@@ -170,6 +174,8 @@ Route::middleware(['auth', 'verified', '2fa', 'tenant'])->group(function () {
     // --- Contacts et prospects -------------------------------------------------
     Route::resource('contacts', ContactController::class)->only(['index', 'show', 'update']);
     Route::resource('leads', LeadController::class)->only(['index', 'show', 'update']);
+    Route::get('sales', [SalesDashboardController::class, 'index'])->name('sales.index');
+    Route::post('sales/install', [SalesDashboardController::class, 'install'])->name('sales.install');
 
     // --- Base de connaissances -------------------------------------------------
     Route::resource('knowledge', KnowledgeDocumentController::class)
@@ -188,9 +194,13 @@ Route::middleware(['auth', 'verified', '2fa', 'tenant'])->group(function () {
         Route::resource('services', ServiceController::class)->except(['show', 'create', 'edit']);
         Route::resource('faqs',     FaqController::class)->except(['show', 'create', 'edit']);
 
-        Route::get('agent',  [AgentController::class, 'edit'])->name('agent.edit');
-        Route::put('agent',  [AgentController::class, 'update'])->name('agent.update');
-        Route::post('agent/preview', [AgentController::class, 'preview'])->name('agent.preview');
+        Route::get('agent',                  [AgentController::class, 'index'])->name('agent.index');
+        Route::get('agent/create',           [AgentController::class, 'create'])->name('agent.create');
+        Route::post('agent',                 [AgentController::class, 'store'])->name('agent.store');
+        Route::get('agent/{agent}/edit',     [AgentController::class, 'edit'])->name('agent.edit');
+        Route::put('agent/{agent}',          [AgentController::class, 'update'])->name('agent.update');
+        Route::delete('agent/{agent}',       [AgentController::class, 'destroy'])->name('agent.destroy');
+        Route::post('agent/{agent}/preview', [AgentController::class, 'preview'])->name('agent.preview');
 
         Route::get('whatsapp',       [WhatsAppAccountController::class, 'edit'])->name('whatsapp.edit');
         Route::put('whatsapp',       [WhatsAppAccountController::class, 'update'])->name('whatsapp.update');
@@ -198,9 +208,22 @@ Route::middleware(['auth', 'verified', '2fa', 'tenant'])->group(function () {
         Route::post('whatsapp/sync-templates', [WhatsAppAccountController::class, 'syncTemplates'])
             ->name('whatsapp.sync-templates');
 
+        Route::get('widget',         [WidgetSettingsController::class, 'edit'])->name('widget.edit');
+        Route::put('widget',         [WidgetSettingsController::class, 'update'])->name('widget.update');
+
+        Route::get('billing',        [BillingController::class, 'edit'])->name('billing.edit');
+        // Même limiteur que l'inscription : la saisie d'un code reste la seule
+        // opération de l'espace client qui se prête à une recherche par essais.
+        Route::post('billing/redeem', [BillingController::class, 'redeem'])
+            ->middleware('throttle:access-code')
+            ->name('billing.redeem');
+
         Route::resource('users', TeamUserController::class)->except(['show', 'create', 'edit']);
 
         Route::post('users/{user}/resend-invitation', [TeamUserController::class, 'resendInvitation'])
             ->name('users.resend-invitation');
     });
 });
+
+// L'API publique du widget de chat vit dans routes/widget.php : elle ne doit
+// porter ni session ni CSRF, que ce fichier applique à tout ce qu'il déclare.

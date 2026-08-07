@@ -103,6 +103,8 @@ return [
         'allowed_mime_types'  => [
             'application/pdf',
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/vnd.ms-excel',
             'text/plain',
             'text/markdown',
         ],

@@ -12,6 +12,7 @@ const props = defineProps({
     notes: Array,
     lead: Object, // nullable
     operators: Array,
+    agents: Array,
     windowOpen: Boolean,
     windowExpires: String,
     templates: Array,
@@ -169,7 +170,7 @@ const selectConversation = (id) => {
     router.visit(`/conversations/${id}`, {
         preserveState: true,
         preserveScroll: true,
-        only: ['conversation', 'messages', 'notes', 'lead', 'operators', 'windowOpen', 'windowExpires', 'templates'],
+        only: ['conversation', 'messages', 'notes', 'lead', 'operators', 'agents', 'windowOpen', 'windowExpires', 'templates'],
     });
 };
 
@@ -187,6 +188,18 @@ const assign = (event) => {
     router.post(
         `/conversations/${props.conversation.id}/assign`,
         { user_id: event.target.value || null },
+        { 
+            preserveScroll: true,
+            preserveState: true,
+        },
+    );
+};
+
+// Assign conversation to AI Agent
+const changeAgent = (event) => {
+    router.post(
+        `/conversations/${props.conversation.id}/assign-agent`,
+        { agent_id: event.target.value || null },
         { 
             preserveScroll: true,
             preserveState: true,
@@ -414,9 +427,21 @@ const toggleSidebar = () => {
                                 class="input py-1 px-2 text-xs max-w-32 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 cursor-pointer"
                                 :value="conversation.assigned_user_id ?? ''" 
                                 @change="assign"
+                                title="Attribuer à un opérateur"
                             >
                                 <option value="">Non attribuée</option>
                                 <option v-for="op in operators" :key="op.id" :value="op.id">{{ op.name }}</option>
+                            </select>
+
+                            <!-- Agent IA -->
+                            <select 
+                                class="input py-1 px-2 text-xs max-w-32 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 cursor-pointer"
+                                :value="conversation.agent_id ?? ''" 
+                                @change="changeAgent"
+                                title="Choisir l'agent IA"
+                            >
+                                <option value="">Agent par défaut</option>
+                                <option v-for="ag in agents" :key="ag.id" :value="ag.id">{{ ag.name }}</option>
                             </select>
 
                             <!-- Prise de main / Restauration IA -->

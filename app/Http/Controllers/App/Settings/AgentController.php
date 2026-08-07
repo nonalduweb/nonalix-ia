@@ -21,87 +21,122 @@ class AgentController
         private readonly TenantContext $context,
     ) {}
 
-    public function edit(Request $request): Response
+    /** Liste des agents IA. */
+    public function index(Request $request): Response
     {
-        $agent = $this->currentAgent();
+        abort_unless($request->user()->can('viewAny', Agent::class), 403);
 
-        abort_unless($request->user()->can('view', $agent), 403);
+        $agents = Agent::query()
+            ->latest()
+            ->get();
 
-        return Inertia::render('Settings/Agent', [
-            'agent'     => $agent->makeHidden('api_key'),
-            'hasApiKey' => $agent->api_key !== null,
-            'providers' => AiProvider::options(),
-            // Le catalogue d'outils est exposé pour que le client choisisse
-            // lesquels activer, avec leur description exacte.
-            'tools' => collect(app('nonalix.agent.tools'))
-                ->map(fn ($tool) => [
-                    'name'        => $tool->name(),
-                    'description' => $tool->definition()->description,
-                ])->values(),
-            'defaults' => config('ai.agent'),
+        return Inertia::render('Settings/Agents/Index', [
+            'agents' => $agents,
         ]);
     }
 
-    public function update(Request $request): RedirectResponse
+    /** Formulaire de création d'un agent. */
+    public function create(Request $request): Response
     {
-        $agent = $this->currentAgent();
+        abort_unless($request->user()->can('create', Agent::class), 403);
 
+        return Inertia::render('Settings/Agents/Edit', [
+            'agent'     => null,
+            'hasApiKey' => false,
+            'providers' => AiProvider::options(),
+            'tools'     => $this->getToolsCatalog(),
+            'defaults'  => config('ai.agent'),
+        ]);
+    }
+
+    /** Enregistrement d'un nouvel agent. */
+    public function store(Request $request): RedirectResponse
+    {
+        abort_unless($request->user()->can('create', Agent::class), 403);
+
+        $validated = $this->validateRequest($request);
+
+        $agent = new Agent($validated);
+        $agent->tenant_id = $request->user()->tenant_id;
+
+        // Si cet agent est actif, on désactive les autres agents actifs
+        if ($agent->is_active) {
+            Agent::query()->where('is_active', true)->update(['is_active' => false]);
+        }
+
+        $agent->save();
+
+        $this->audit->log('agent.created', $agent);
+
+        return redirect()->route('settings.agent.index')->with('success', 'L\'agent IA a été créé avec succès.');
+    }
+
+    /** Édition d'un agent. */
+    public function edit(Request $request, Agent $agent): Response
+    {
+        abort_unless($request->user()->can('view', $agent), 403);
+
+        return Inertia::render('Settings/Agents/Edit', [
+            'agent'     => $agent->makeHidden('api_key'),
+            'hasApiKey' => $agent->api_key !== null,
+            'providers' => AiProvider::options(),
+            'tools'     => $this->getToolsCatalog(),
+            'defaults'  => config('ai.agent'),
+        ]);
+    }
+
+    /** Mise à jour d'un agent. */
+    public function update(Request $request, Agent $agent): RedirectResponse
+    {
         abort_unless($request->user()->can('update', $agent), 403);
 
-        $validated = $request->validate([
-            'name'              => ['required', 'string', 'max:120'],
-            'provider'          => ['required', Rule::enum(AiProvider::class)],
-            'model'             => ['required', 'string', 'max:80'],
-            'api_key'           => ['nullable', 'string', 'max:255'],
-            'temperature'       => ['required', 'numeric', 'min:0', 'max:2'],
-            'max_tokens'        => ['required', 'integer', 'min:64', 'max:8192'],
-            // 20 000 caracteres, soit environ 5 000 jetons. La colonne est
-            // en `text` et n'impose rien : cette borne protege le COUT, le
-            // prompt etant renvoye au modele a chaque message.
-            'system_prompt'     => ['nullable', 'string', 'max:20000'],
-            'persona'           => ['nullable', 'string', 'max:120'],
-            'tone'              => ['nullable', 'string', 'max:40'],
-            'language'          => ['required', 'string', 'max:10'],
-            'greeting_message'  => ['nullable', 'string', 'max:1000'],
-            'fallback_message'  => ['nullable', 'string', 'max:1000'],
-            // Au-delà de ~30 messages, le coût par tour explose sans gain de
-            // pertinence : la borne est un garde-fou économique.
-            'memory_window'     => ['required', 'integer', 'min:2', 'max:30'],
-            'rag_enabled'       => ['boolean'],
-            'rag_top_k'         => ['required', 'integer', 'min:1', 'max:20'],
-            'rag_min_score'     => ['required', 'numeric', 'min:0', 'max:1'],
-            'handover_keywords'   => ['array', 'max:30'],
-            'handover_keywords.*' => ['string', 'max:60'],
-            'enabled_tools'       => ['array'],
-            'enabled_tools.*'     => ['string', Rule::in(array_keys(app('nonalix.agent.tools')))],
-            'active_hours_only' => ['boolean'],
-            'is_active'         => ['boolean'],
-        ]);
+        $validated = $this->validateRequest($request);
 
-        // Champ laissé vide = on conserve la clé existante, plutôt que de
-        // l'effacer parce que le formulaire ne la renvoie jamais.
+        // Champ laissé vide = on conserve la clé existante.
         if (empty($validated['api_key'])) {
             unset($validated['api_key']);
+        }
+
+        // Si cet agent est activé, on désactive tous les autres
+        if (!empty($validated['is_active']) && $validated['is_active'] && !$agent->is_active) {
+            Agent::query()->where('is_active', true)->update(['is_active' => false]);
         }
 
         $agent->fill($validated)->save();
 
         $this->audit->logUpdate('agent.updated', $agent);
 
-        return back()->with('success', 'Configuration de l\'agent enregistrée.');
+        return redirect()->route('settings.agent.index')->with('success', 'Configuration de l\'agent enregistrée.');
     }
 
-    /**
-     * Aperçu du prompt système réellement envoyé au modèle.
-     *
-     * Fonctionnalité de transparence : le client doit pouvoir vérifier ce que
-     * son agent « sait » avant de le laisser parler à ses clients.
-     */
-    public function preview(Request $request): RedirectResponse
+    /** Suppression d'un agent. */
+    public function destroy(Request $request, Agent $agent): RedirectResponse
     {
-        $agent = $this->currentAgent();
+        abort_unless($request->user()->can('delete', $agent), 403);
 
-        abort_unless($request->user()->can('update', $agent), 403);
+        // Il faut conserver au moins un agent
+        $count = Agent::query()->count();
+        abort_if($count <= 1, 422, 'Vous devez conserver au moins un agent pour votre entreprise.');
+
+        // Si l'agent supprimé était actif, on active le premier agent restant
+        if ($agent->is_active) {
+            $next = Agent::query()->whereKeyNot($agent->id)->first();
+            if ($next) {
+                $next->update(['is_active' => true]);
+            }
+        }
+
+        $agent->delete();
+
+        $this->audit->log('agent.deleted', $agent);
+
+        return redirect()->route('settings.agent.index')->with('success', 'Agent IA supprimé.');
+    }
+
+    /** Aperçu du prompt de l'agent. */
+    public function preview(Request $request, Agent $agent): RedirectResponse
+    {
+        abort_unless($request->user()->can('view', $agent), 403);
 
         $prompt = app(\App\Services\AI\PromptBuilder::class)->build($agent);
 
@@ -109,30 +144,42 @@ class AgentController
             ->with('promptPreview', $prompt);
     }
 
-    /**
-     * L'agent du tenant, créé à la volée avec des valeurs sûres si l'entreprise
-     * n'en a pas encore configuré.
-     */
-    private function currentAgent(): Agent
+    private function getToolsCatalog(): array
     {
-        return Agent::query()->firstOr(function () {
-            $agent = new Agent([
-                'name'              => 'Assistant',
-                'provider'          => config('ai.default'),
-                'model'             => config('ai.providers.'.config('ai.default').'.default_model'),
-                'temperature'       => config('ai.agent.default_temperature'),
-                'max_tokens'        => config('ai.agent.default_max_tokens'),
-                'memory_window'     => config('ai.agent.memory_window'),
-                'rag_top_k'         => config('ai.agent.rag_top_k'),
-                'rag_min_score'     => config('ai.agent.rag_min_score'),
-                'handover_keywords' => ['humain', 'conseiller', 'agent', 'quelqu\'un'],
-                'enabled_tools'     => ['request_human_handover', 'list_services', 'get_business_hours'],
-                'is_active'         => false,
-            ]);
+        return collect(app('nonalix.agent.tools'))
+            ->map(fn ($tool) => [
+                'name'        => $tool->name(),
+                'description' => $tool->definition()->description,
+            ])->values()->all();
+    }
 
-            $agent->save();
-
-            return $agent;
-        });
+    private function validateRequest(Request $request): array
+    {
+        return $request->validate([
+            'name'                     => ['required', 'string', 'max:120'],
+            'provider'                 => ['required', Rule::enum(AiProvider::class)],
+            'model'                    => ['required', 'string', 'max:80'],
+            'api_key'                  => ['nullable', 'string', 'max:255'],
+            'temperature'              => ['required', 'numeric', 'min:0', 'max:2'],
+            'max_tokens'               => ['required', 'integer', 'min:64', 'max:8192'],
+            'system_prompt'            => ['nullable', 'string', 'max:20000'],
+            'persona'                  => ['nullable', 'string', 'max:120'],
+            'tone'                     => ['nullable', 'string', 'max:40'],
+            'language'                 => ['required', 'string', 'max:10'],
+            'greeting_message'         => ['nullable', 'string', 'max:1000'],
+            'fallback_message'         => ['nullable', 'string', 'max:1000'],
+            'memory_window'            => ['required', 'integer', 'min:2', 'max:30'],
+            'rag_enabled'              => ['boolean'],
+            'rag_top_k'                => ['required', 'integer', 'min:1', 'max:20'],
+            'rag_min_score'            => ['required', 'numeric', 'min:0', 'max:1'],
+            'handover_keywords'        => ['array', 'max:30'],
+            'handover_keywords.*'      => ['string', 'max:60'],
+            'enabled_tools'            => ['array'],
+            'enabled_tools.*'          => ['string', Rule::in(array_keys(app('nonalix.agent.tools')))],
+            'active_hours_only'        => ['boolean'],
+            'is_active'                => ['boolean'],
+            'settings'                 => ['nullable', 'array'],
+            'settings.n8n_webhook_url' => ['nullable', 'url', 'max:2048'],
+        ]);
     }
 }

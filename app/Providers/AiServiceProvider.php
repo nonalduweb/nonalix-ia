@@ -10,9 +10,16 @@ use App\Services\AI\Tools\GetBusinessHoursTool;
 use App\Services\AI\Tools\ListServicesTool;
 use App\Services\AI\Tools\QualifyLeadTool;
 use App\Services\AI\Tools\RequestHumanHandoverTool;
+use App\Services\AI\Tools\CreateProspectTool;
+use App\Services\AI\Tools\BookAppointmentTool;
+use App\Services\AI\Tools\SendEmailTool;
+use App\Services\AI\Tools\GenerateQuoteTool;
+use App\Services\AI\Tools\CheckOrderStatusTool;
+use App\Services\AI\Tools\SendDocumentTool;
 use App\Services\Knowledge\DocumentIngestionService;
 use App\Services\Knowledge\Extractors\DocxExtractor;
 use App\Services\Knowledge\Extractors\PdfExtractor;
+use App\Services\Knowledge\Extractors\XlsxExtractor;
 use App\Services\Knowledge\Extractors\TextExtractor;
 use App\Services\Knowledge\Extractors\UrlExtractor;
 use App\Services\Knowledge\RecursiveTextChunker;
@@ -34,6 +41,12 @@ class AiServiceProvider extends ServiceProvider
                 $app->make(QualifyLeadTool::class),
                 $app->make(ListServicesTool::class),
                 $app->make(GetBusinessHoursTool::class),
+                $app->make(CreateProspectTool::class),
+                $app->make(BookAppointmentTool::class),
+                $app->make(SendEmailTool::class),
+                $app->make(GenerateQuoteTool::class),
+                $app->make(CheckOrderStatusTool::class),
+                $app->make(SendDocumentTool::class),
             ];
 
             return collect($tools)
@@ -48,6 +61,7 @@ class AiServiceProvider extends ServiceProvider
             extractors: [
                 $app->make(PdfExtractor::class),
                 $app->make(DocxExtractor::class),
+                $app->make(XlsxExtractor::class),
                 $app->make(UrlExtractor::class),
                 $app->make(TextExtractor::class),
             ],

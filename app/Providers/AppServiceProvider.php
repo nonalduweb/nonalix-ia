@@ -63,6 +63,21 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(600)->by(is_string($tenant) ? $tenant : $request->ip());
         });
 
+        // Widget de chat : route publique et anonyme qui écrit en base et
+        // déclenche des générations facturées au client. La clé combine l'IP
+        // et le tenant visé, pour qu'un abus sur une entreprise ne coupe pas
+        // le widget des autres. Le plafond couvre largement le sondage du
+        // navigateur (20 requêtes/min par widget ouvert).
+        RateLimiter::for('widget', function (Request $request) {
+            $tenant = $request->route('tenant');
+            $key    = $request->ip().'|'.(is_string($tenant) ? $tenant : 'inconnu');
+
+            return [
+                Limit::perMinute(60)->by($key),
+                Limit::perHour(600)->by($key),
+            ];
+        });
+
         // Connexion : la clé combine e-mail et IP. Ne cibler que l'IP
         // permettrait de bloquer un utilisateur légitime derrière un NAT
         // partagé ; ne cibler que l'e-mail laisserait passer le bourrage

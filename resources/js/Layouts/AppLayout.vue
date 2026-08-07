@@ -11,6 +11,7 @@ const impersonating = computed(() => page.props.impersonating);
 const navigation = computed(() => [
     { label: 'Tableau de bord', href: '/', permission: null, show: true },
     { label: 'WhatsApp', href: '/conversations', permission: 'conversations.view', show: !!tenant.value?.whatsapp_connected },
+    { label: 'Ventes & Automation', href: '/sales', permission: 'leads.view', show: true },
     { label: 'Contacts', href: '/contacts', permission: 'contacts.view', show: true },
     { label: 'Prospects', href: '/leads', permission: 'leads.view', show: true },
     { label: 'Connaissances', href: '/knowledge', permission: 'knowledge.view', show: true },

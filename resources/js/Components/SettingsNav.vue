@@ -10,6 +10,8 @@ const items = [
     { label: 'Entreprise', href: '/settings/business', key: 'business' },
     { label: 'Agent IA', href: '/settings/agent', key: 'agent' },
     { label: 'WhatsApp', href: '/settings/whatsapp', key: 'whatsapp' },
+    { label: 'Widget Site Web', href: '/settings/widget', key: null },
+    { label: 'Facturation', href: '/settings/billing', key: null },
     { label: 'Prestations', href: '/settings/services', key: 'services' },
     { label: 'Questions fréquentes', href: '/settings/faqs', key: 'faqs' },
     { label: 'Utilisateurs', href: '/settings/users', key: null },

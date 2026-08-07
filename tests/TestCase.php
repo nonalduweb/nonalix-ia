@@ -93,7 +93,7 @@ abstract class TestCase extends BaseTestCase
             'contacts.view', 'contacts.update',
             'leads.view', 'leads.update',
             'knowledge.view', 'knowledge.create', 'knowledge.update', 'knowledge.delete',
-            'agent.view', 'agent.update',
+            'agent.view', 'agent.create', 'agent.update', 'agent.delete',
             'whatsapp.view', 'whatsapp.update',
             'settings.view', 'settings.update',
             'users.view', 'users.create', 'users.update',

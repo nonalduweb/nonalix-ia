@@ -1,0 +1,24 @@
+{
+  "name": "Nonalix IA",
+  "short_name": "Nonalix IA",
+  "description": "Plateforme de messagerie intelligente WhatsApp propulsée par l'IA.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b141a",
+  "theme_color": "#005c4b",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/pwa-icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/pwa-icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ]
+}

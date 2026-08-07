@@ -53,12 +53,12 @@ class KnowledgeDocumentController
         $maxKilobytes = (int) (config('nonalix.knowledge.max_document_bytes') / 1024);
 
         $validated = $request->validate([
-            'source_type' => ['required', Rule::in(['pdf', 'docx', 'txt', 'url'])],
+            'source_type' => ['required', Rule::in(['pdf', 'docx', 'xlsx', 'txt', 'url'])],
             'title'       => ['required', 'string', 'max:250'],
             'file'        => [
                 'required_unless:source_type,url', 'nullable', 'file',
                 "max:{$maxKilobytes}",
-                'mimes:pdf,docx,txt,md',
+                'mimes:pdf,docx,xlsx,xls,txt,md',
             ],
             'source_url'  => ['required_if:source_type,url', 'nullable', 'url:http,https', 'max:2000'],
         ]);

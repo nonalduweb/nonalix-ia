@@ -38,6 +38,16 @@ class UserFactory extends Factory
             'two_factor_secret'         => null,
             'two_factor_recovery_codes' => null,
             'two_factor_confirmed_at'   => null,
+            // Ajoutée par la migration 000022 et oubliée ici : la colonne a
+            // beau porter un défaut en base, l'instance issue de la factory ne
+            // la contenait pas, et `hasTwoFactorEnabled()` la lit à chaque
+            // requête protégée. Toute route derrière le middleware `2fa`
+            // échouait donc en test.
+            'two_factor_method'         => 'totp',
+            // Lu par l'accesseur `avatar_url`, que HandleInertiaRequests
+            // partage à CHAQUE page rendue : sans cette clé, tout test qui
+            // charge un écran Inertia échoue.
+            'avatar_path'               => null,
         ];
     }
 

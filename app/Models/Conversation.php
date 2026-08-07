@@ -21,7 +21,7 @@ class Conversation extends Model
     use HasUuidPrimaryKey;
 
     protected $fillable = [
-        'contact_id', 'whatsapp_account_id', 'channel', 'status', 'ai_enabled',
+        'contact_id', 'whatsapp_account_id', 'agent_id', 'channel', 'status', 'ai_enabled',
         'assigned_user_id', 'last_message_at', 'last_inbound_at',
         'window_expires_at', 'unread_count',
     ];
@@ -50,6 +50,11 @@ class Conversation extends Model
     public function whatsappAccount(): BelongsTo
     {
         return $this->belongsTo(WhatsAppAccount::class);
+    }
+
+    public function agent(): BelongsTo
+    {
+        return $this->belongsTo(Agent::class);
     }
 
     public function assignedUser(): BelongsTo
