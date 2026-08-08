@@ -22,6 +22,7 @@ use App\Http\Controllers\App\Settings\AgentSandboxController;
 use App\Http\Controllers\App\Settings\AgentVoiceController;
 use App\Http\Controllers\App\Settings\BillingController;
 use App\Http\Controllers\App\Settings\BusinessProfileController;
+use App\Http\Controllers\App\Settings\ConfigCopilotController;
 use App\Http\Controllers\App\Settings\EmailChannelController;
 use App\Http\Controllers\App\Settings\FaqController;
 use App\Http\Controllers\App\Settings\ServiceController;
@@ -257,6 +258,12 @@ Route::middleware(['auth', 'verified', '2fa', 'tenant'])->group(function () {
 
         Route::post('users/{user}/resend-invitation', [TeamUserController::class, 'resendInvitation'])
             ->name('users.resend-invitation');
+
+        // --- Copilote ---------------------------------------------------------------
+        // Chaque question est une generation facturee : plafonnee comme telle.
+        Route::post('copilot/ask', [ConfigCopilotController::class, 'ask'])
+            ->middleware('throttle:20,1')
+            ->name('copilot.ask');
     });
 });
 

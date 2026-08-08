@@ -272,8 +272,70 @@ const subscribeToActiveConversation = () => {
         });
 };
 
+// --- Notifications Bureau HTML5 ---------------------------------------------
+const notificationState = ref('default');
+
+const checkNotificationPermission = () => {
+    if (!('Notification' in window)) {
+        notificationState.value = 'unsupported';
+        return;
+    }
+    notificationState.value = Notification.permission;
+};
+
+const toggleNotifications = () => {
+    if (!('Notification' in window)) return;
+    
+    if (Notification.permission === 'default') {
+        Notification.requestPermission().then((permission) => {
+            notificationState.value = permission;
+        });
+    } else if (Notification.permission === 'denied') {
+        alert("Les notifications ont été bloquées dans votre navigateur. Veuillez les réactiver dans les paramètres de votre navigateur pour ce site.");
+    } else {
+        alert("Les notifications de bureau sont déjà activées !");
+    }
+};
+
+const showNotification = (event) => {
+    if (event.direction !== 'in') return;
+    if (Notification.permission !== 'granted') return;
+
+    // Ne pas notifier si l'utilisateur regarde déjà cette conversation
+    if (document.visibilityState === 'visible' && props.conversation?.id === event.conversation_id) {
+        return;
+    }
+
+    const conv = props.conversations?.data?.find(c => c.id === event.conversation_id);
+    const senderName = conv 
+        ? (conv.contact?.name || conv.contact?.profile_name || '+' + conv.contact?.wa_id) 
+        : 'Nouveau contact';
+
+    const title = `Message de ${senderName}`;
+    const bodyText = event.type === 'text' 
+        ? (event.body?.length > 80 ? event.body.substring(0, 80) + '...' : event.body)
+        : `[Média/Fichier : ${event.type}]`;
+
+    const options = {
+        body: bodyText,
+        icon: '/pwa-icon-192.png',
+        tag: event.conversation_id
+    };
+
+    try {
+        const notification = new Notification(title, options);
+        notification.onclick = () => {
+            window.focus();
+            selectConversation(event.conversation_id);
+        };
+    } catch (e) {
+        console.error('Failed to display browser notification:', e);
+    }
+};
+
 onMounted(() => {
     scrollToBottom();
+    checkNotificationPermission();
 
     // 1. L'horloge : aucun reseau, elle ne fait que vieillir l'affichage.
     clockTimer = setInterval(() => (now.value = Date.now()), CLOCK_TICK_MS);
@@ -289,7 +351,10 @@ onMounted(() => {
 
     // 2. Les evenements, regroupes.
     globalChannel = window.Echo.private(`tenant.${tenantId}.conversations`)
-        .listen('.message.created', scheduleRefresh)
+        .listen('.message.created', (event) => {
+            showNotification(event);
+            scheduleRefresh();
+        })
         .listen('.conversation.updated', scheduleRefresh);
 
     // Une RE-connexion signifie que des evenements ont ete manques pendant la
@@ -560,6 +625,24 @@ const toggleTranscript = (id) => {
                             Humain requis
                         </label>
                     </div>
+
+                    <!-- Notification bureau inline toggle -->
+                    <div class="flex items-center justify-between border-t border-slate-100 dark:border-slate-800/60 pt-2.5 mt-1">
+                        <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Notifications Bureau</span>
+                        <button 
+                            @click="toggleNotifications" 
+                            type="button"
+                            class="flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[9.5px] font-bold transition duration-200 cursor-pointer border"
+                            :class="notificationState === 'granted' 
+                                ? 'bg-emerald-50 text-emerald-800 border-emerald-200/50 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/50' 
+                                : notificationState === 'denied'
+                                    ? 'bg-rose-50 text-rose-800 border-rose-200/50 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/50'
+                                    : 'bg-indigo-50 text-indigo-800 border-indigo-200/50 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800/50'"
+                        >
+                            <span class="h-1.5 w-1.5 rounded-full" :class="notificationState === 'granted' ? 'bg-emerald-500' : notificationState === 'denied' ? 'bg-rose-500' : 'bg-indigo-500'" />
+                            {{ notificationState === 'granted' ? 'Actives' : notificationState === 'denied' ? 'Bloquées' : 'Activer' }}
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Liste dynamique -->
@@ -568,8 +651,8 @@ const toggleTranscript = (id) => {
                         v-for="conv in conversations.data"
                         :key="conv.id"
                         @click="selectConversation(conv.id)"
-                        class="flex items-start gap-3 px-4 py-3 cursor-pointer transition hover:bg-slate-100 dark:hover:bg-slate-800/40 relative"
-                        :class="conversation?.id === conv.id ? 'bg-brand-50/50 dark:bg-slate-800/80 border-l-4 border-brand-500' : 'pl-5'"
+                        class="flex items-start gap-3.5 px-5 py-4 cursor-pointer transition-all duration-200 relative border-b border-slate-100/50 dark:border-slate-800/30 hover:bg-slate-50 dark:hover:bg-slate-800/20"
+                        :class="conversation?.id === conv.id ? 'bg-indigo-500/5 dark:bg-slate-800/50 border-l-4 border-indigo-600' : 'pl-6'"
                     >
                         <!-- Avatar avec initiale -->
                         <div class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center font-bold text-slate-600 dark:text-slate-300 shrink-0 text-sm">

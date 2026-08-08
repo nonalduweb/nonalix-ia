@@ -1,6 +1,7 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, nextTick } from 'vue';
 import { usePage, Link } from '@inertiajs/vue3';
+import axios from 'axios';
 
 const page = usePage();
 const isOpen = ref(false);
@@ -123,6 +124,48 @@ const contextAdvice = computed(() => {
         text: 'Je suis votre copilote de configuration. Suivez la check-list ci-dessous pour rendre votre agent IA opérationnel et le connecter à vos canaux (WhatsApp, site web).'
     };
 });
+
+// Chat avec l'IA
+const chatMessages = ref([
+    { sender: 'copilot', text: 'Bonjour ! Comment puis-je vous aider à configurer votre plateforme Nonalix IA aujourd\'hui ?' }
+]);
+const userQuestion = ref('');
+const isAsking = ref(false);
+
+const askCopilot = async () => {
+    const query = userQuestion.value.trim();
+    if (!query || isAsking.value) return;
+
+    chatMessages.value.push({ sender: 'user', text: query });
+    userQuestion.value = '';
+    isAsking.value = true;
+
+    // Faire défiler pour voir la question
+    scrollToBottom();
+
+    try {
+        const response = await axios.post('/settings/copilot/ask', { question: query });
+        chatMessages.value.push({ sender: 'copilot', text: response.data.answer });
+    } catch (error) {
+        console.error(error);
+        chatMessages.value.push({ 
+            sender: 'copilot', 
+            text: 'Désolé, je rencontre une difficulté technique pour générer une réponse actuellement. Veuillez réessayer plus tard.' 
+        });
+    } finally {
+        isAsking.value = false;
+        scrollToBottom();
+    }
+};
+
+const scrollToBottom = () => {
+    nextTick(() => {
+        const chatEl = document.getElementById('copilot-chat-history');
+        if (chatEl) {
+            chatEl.scrollTop = chatEl.scrollHeight;
+        }
+    });
+};
 </script>
 
 <template>
@@ -220,11 +263,56 @@ const contextAdvice = computed(() => {
                         </div>
                     </div>
                 </div>
+
+                <!-- Chat interactif Q&A -->
+                <div class="border-t border-slate-100 dark:border-slate-800 pt-5 space-y-3">
+                    <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">💬 Assistant Interactif (Q&A)</h4>
+                    
+                    <!-- Historique de chat -->
+                    <div 
+                        id="copilot-chat-history"
+                        class="max-h-56 overflow-y-auto space-y-2 border border-slate-100 dark:border-slate-800/80 p-2.5 rounded-lg bg-slate-50 dark:bg-slate-900/60"
+                    >
+                        <div 
+                            v-for="(chat, idx) in chatMessages" 
+                            :key="idx" 
+                            class="p-2 rounded text-[10.5px] leading-relaxed max-w-[90%] shadow-xs"
+                            :class="chat.sender === 'user' 
+                                ? 'bg-indigo-600 text-white ml-auto rounded-tr-none' 
+                                : 'bg-slate-200 text-slate-800 dark:bg-slate-800 dark:text-slate-200 rounded-tl-none'"
+                        >
+                            <p class="whitespace-pre-wrap">{{ chat.text }}</p>
+                        </div>
+                        
+                        <!-- Indicateur d'écriture -->
+                        <div v-if="isAsking" class="bg-slate-200 text-slate-800 dark:bg-slate-800 dark:text-slate-200 p-2 rounded text-[10.5px] max-w-[90%] rounded-tl-none italic animate-pulse">
+                            Le Copilote réfléchit...
+                        </div>
+                    </div>
+
+                    <!-- Input question -->
+                    <form @submit.prevent="askCopilot" class="flex gap-2">
+                        <input 
+                            v-model="userQuestion" 
+                            type="text" 
+                            placeholder="Poser une question..."
+                            class="flex-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs placeholder:text-slate-400 text-slate-800 dark:text-white outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                            :disabled="isAsking"
+                        />
+                        <button 
+                            type="submit"
+                            class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer"
+                            :disabled="isAsking || !userQuestion.trim()"
+                        >
+                            Poser
+                        </button>
+                    </form>
+                </div>
             </div>
 
             <!-- Footer -->
             <div class="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/20 text-center">
-                <p class="text-[9px] text-slate-400">Besoin d'aide ? Contactez notre support commercial.</p>
+                <p class="text-[9px] text-slate-400">Besoin d'aide ? Contactez notre support au +225 05 66 36 03 03.</p>
             </div>
         </div>
     </div>
