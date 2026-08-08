@@ -13,6 +13,7 @@ use App\Enums\SenderType;
 use App\Events\MessageCreated;
 use App\Exceptions\QuotaExceededException;
 use App\Jobs\Concerns\RunsInTenantContext;
+use App\Jobs\Voice\SynthesizeReplyJob;
 use App\Jobs\WhatsApp\SendWhatsAppMessageJob;
 use App\Models\Agent;
 use App\Models\BusinessHour;
@@ -56,6 +57,9 @@ class GenerateAgentReplyJob implements ShouldQueue
         public readonly string $tenantId,
         public readonly string $conversationId,
         public readonly string $incomingText,
+        // Le format du message REÇU, seule donnée dont dépend le mode
+        // « même format que le client ».
+        public readonly bool $incomingWasAudio = false,
     ) {}
 
     public function handle(AgentRunner $runner, QuotaService $quotas, EmailClassifier $classifier): void
@@ -308,6 +312,17 @@ class GenerateAgentReplyJob implements ShouldQueue
     /** Remet le message au transporteur du canal concerné. */
     private function dispatchToChannel(string $tenantId, Conversation $conversation, Message $message): void
     {
+        $agent = $conversation->agent ?? $conversation->tenant?->activeAgent();
+
+        // La réponse doit-elle être entendue plutôt que lue ? La décision est
+        // déterministe et tient dans le modèle : `voice` toujours, `text`
+        // jamais, `same_as_user` selon le format reçu.
+        if ($agent?->shouldReplyWithVoice($this->incomingWasAudio) === true) {
+            SynthesizeReplyJob::dispatch($tenantId, $message->id)->onQueue('ai');
+
+            return;
+        }
+
         match ($conversation->channel) {
             // Le widget lit la conversation par sondage : rien à transporter.
             'web'   => $message->update(['status' => MessageStatus::Delivered]),

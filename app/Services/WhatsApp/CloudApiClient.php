@@ -150,6 +150,104 @@ class CloudApiClient
         return $this->handle($response)['url'] ?? null;
     }
 
+    /**
+     * Télécharge les octets d'un média entrant.
+     *
+     * L'URL rendue par Meta est temporaire ET exige le même jeton porteur que
+     * le reste de l'API : la récupérer sans en-tête d'authentification échoue.
+     *
+     * @throws WhatsAppException
+     */
+    public function downloadMedia(string $mediaId): ?string
+    {
+        $url = $this->fetchMediaUrl($mediaId);
+
+        if ($url === null) {
+            return null;
+        }
+
+        try {
+            $response = $this->request()->timeout(60)->get($url);
+        } catch (Throwable $e) {
+            throw new WhatsAppException(
+                'Téléchargement du média impossible : '
+                    .Redaction::fromText($e->getMessage(), $this->secrets()),
+                retryable: true,
+                previous: $e,
+            );
+        }
+
+        return $response->successful() ? $response->body() : null;
+    }
+
+    /**
+     * Téléverse un média et rend son identifiant Meta.
+     *
+     * Étape obligatoire avant tout envoi de note vocale : on n'envoie pas des
+     * octets à un contact, on envoie une référence.
+     *
+     * @throws WhatsAppException
+     */
+    public function uploadMedia(string $bytes, string $filename, string $mimeType): string
+    {
+        $url = $this->url($this->account->phone_number_id.'/media');
+
+        try {
+            $response = $this->request()
+                ->timeout(60)
+                ->attach('file', $bytes, $filename, ['Content-Type' => $mimeType])
+                ->post($url, [
+                    'messaging_product' => 'whatsapp',
+                    'type'              => $mimeType,
+                ]);
+        } catch (Throwable $e) {
+            throw new WhatsAppException(
+                'Téléversement du média impossible : '
+                    .Redaction::fromText($e->getMessage(), $this->secrets()),
+                retryable: true,
+                previous: $e,
+            );
+        }
+
+        $id = $this->handle($response)['id'] ?? null;
+
+        if (! is_string($id) || $id === '') {
+            throw new WhatsAppException('WhatsApp n\'a pas rendu d\'identifiant de média.', retryable: true);
+        }
+
+        return $id;
+    }
+
+    /**
+     * Envoie une note vocale.
+     *
+     * `voice: true` est ce qui distingue une VRAIE note vocale d'une pièce
+     * jointe audio. Sans lui, le contact reçoit un fichier à télécharger au
+     * lieu d'un message qu'il écoute d'un geste — ce n'est pas la même chose.
+     *
+     * @return string  le wamid attribué par Meta
+     *
+     * @throws WhatsAppException
+     */
+    public function sendVoiceNote(string $to, string $mediaId, ?string $replyToWamid = null): string
+    {
+        $payload = [
+            'messaging_product' => 'whatsapp',
+            'recipient_type'    => 'individual',
+            'to'                => $to,
+            'type'              => 'audio',
+            'audio'             => ['id' => $mediaId, 'voice' => true],
+        ];
+
+        if ($replyToWamid !== null) {
+            $payload['context'] = ['message_id' => $replyToWamid];
+        }
+
+        $data = $this->post('messages', $payload);
+
+        return $data['messages'][0]['id'] ?? '';
+    }
+
     // -------------------------------------------------------------------------
 
     /**

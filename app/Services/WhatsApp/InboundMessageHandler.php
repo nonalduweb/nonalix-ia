@@ -8,10 +8,12 @@ use App\Data\WhatsApp\InboundMessage;
 use App\Enums\ConversationStatus;
 use App\Enums\MessageDirection;
 use App\Enums\MessageStatus;
+use App\Enums\MessageType;
 use App\Enums\OptInStatus;
 use App\Enums\SenderType;
 use App\Events\MessageCreated;
 use App\Jobs\AI\GenerateAgentReplyJob;
+use App\Jobs\Voice\TranscribeInboundAudioJob;
 use App\Jobs\WhatsApp\SendWhatsAppMessageJob;
 use App\Models\ConsentLog;
 use App\Models\Contact;
@@ -81,11 +83,27 @@ class InboundMessageHandler
             return;
         }
 
-        if ($conversation->shouldAiRespond() && $inbound->hasText()) {
+        if (! $conversation->shouldAiRespond()) {
+            return;
+        }
+
+        if ($inbound->hasText()) {
             GenerateAgentReplyJob::dispatch(
                 tenantId: $tenant->id,
                 conversationId: $conversation->id,
                 incomingText: (string) $inbound->textContent(),
+            )->onQueue('ai');
+
+            return;
+        }
+
+        // Note vocale : elle passe d'abord par la transcription, qui rendra
+        // la main au même moteur. Le chemin texte ci-dessus est inchangé —
+        // c'est une extension du pipeline, pas une réécriture.
+        if ($inbound->type === MessageType::Audio) {
+            TranscribeInboundAudioJob::dispatch(
+                tenantId: $tenant->id,
+                messageId: $message->id,
             )->onQueue('ai');
         }
     }
