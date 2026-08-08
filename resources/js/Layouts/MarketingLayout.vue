@@ -22,7 +22,7 @@ const year = new Date().getFullYear();
         <header class="sticky top-0 z-40 border-b border-slate-100 bg-white/85 backdrop-blur">
             <div class="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
                 <Link href="/" class="shrink-0" aria-label="Nonalix IA — accueil">
-                    <img src="/logo-nonalixia.png" alt="Nonalix IA" width="500" height="105" class="h-7 w-auto dark:invert dark:hue-rotate-180" />
+                    <img src="/logo-nonalixia.png" alt="Nonalix IA" width="500" height="105" class="h-7 w-auto invert hue-rotate-180" />
                 </Link>
 
                 <nav class="flex items-center gap-7 text-[15px]">

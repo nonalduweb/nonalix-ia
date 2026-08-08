@@ -55,7 +55,7 @@ const logout = () => router.post('/logout');
             v-if="tenant?.status === 'trial'"
             class="bg-brand-50 px-4 py-2 text-center text-sm text-brand-700"
         >
-            Période d'essai — se termine le
+            {{ tenant.plan || "Période d'essai" }} — se termine le
             {{ new Date(tenant.trial_ends_at).toLocaleDateString('fr-FR') }}.
         </div>
 

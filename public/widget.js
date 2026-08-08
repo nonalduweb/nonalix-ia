@@ -178,6 +178,40 @@
             line-height: 1.4;
             text-align: center;
         }
+        .nonalix-mic-btn {
+            background-color: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            width: 36px;
+            height: 36px;
+            border-radius: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: background-color 0.2s, transform 0.2s;
+        }
+        .nonalix-mic-btn svg { width: 16px; height: 16px; fill: #475569; }
+        .nonalix-mic-btn.recording {
+            background-color: #dc2626;
+            border-color: #dc2626;
+            animation: nonalix-pulse 1.4s ease-in-out infinite;
+        }
+        .nonalix-mic-btn.recording svg { fill: #ffffff; }
+        @keyframes nonalix-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+        .nonalix-recording-hint {
+            font-size: 11px;
+            color: #dc2626;
+            font-weight: 600;
+            align-self: center;
+            margin-right: auto;
+            padding-left: 4px;
+        }
+        .nonalix-voice-bubble audio { width: 100%; max-width: 210px; height: 32px; margin-top: 4px; }
+        .nonalix-voice-label { font-size: 11px; opacity: 0.75; }
         .nonalix-notice-info {
             background-color: #f1f5f9;
             border-color: #e2e8f0;
@@ -258,6 +292,9 @@
             <!-- Messages chargés dynamiquement -->
         </div>
         <div class="nonalix-footer">
+            <button class="nonalix-mic-btn" id="nonalix-mic-button" title="Envoyer un message vocal" style="display:none">
+                <svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg>
+            </button>
             <input type="text" class="nonalix-input" placeholder="Écrivez votre message..." id="nonalix-input-field" autocomplete="off" />
             <button class="nonalix-send-btn" id="nonalix-send-button">
                 <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
@@ -275,6 +312,7 @@
     const inputField = chatWindow.querySelector('#nonalix-input-field');
     const sendButton = chatWindow.querySelector('#nonalix-send-button');
     const closeBtn = chatWindow.querySelector('.nonalix-close-btn');
+    const micButton = chatWindow.querySelector('#nonalix-mic-button');
 
     // 6. Fonctions API
     const loadConfig = async () => {
@@ -288,6 +326,7 @@
                 // Appliquer la couleur de thème
                 container.style.setProperty('--theme-color', widgetConfig.theme_color);
                 nameEl.textContent = widgetConfig.agent_name;
+                syncVoiceAvailability();
 
                 // Rendu des messages
                 renderMessages();
@@ -373,7 +412,34 @@
                 const direction = msg.direction === 'outbound' ? 'out' : 'in';
                 const bubble = document.createElement('div');
                 bubble.className = `nonalix-message-bubble ${direction}`;
-                bubble.textContent = msg.body;
+
+                if (msg.audio_url) {
+                    // On ecoute d'abord ; le texte reste dessous pour qui
+                    // prefere lire, ou ne peut pas ecouter.
+                    bubble.classList.add('nonalix-voice-bubble');
+                    const label = document.createElement('div');
+                    label.className = 'nonalix-voice-label';
+                    label.textContent = msg.duration
+                        ? `🎙 ${String(Math.floor(msg.duration / 60)).padStart(2, '0')}:${String(Math.round(msg.duration % 60)).padStart(2, '0')}`
+                        : '🎙 Message vocal';
+                    bubble.appendChild(label);
+
+                    const audio = document.createElement('audio');
+                    audio.src = baseUrl + msg.audio_url;
+                    audio.controls = true;
+                    audio.preload = 'none';
+                    bubble.appendChild(audio);
+
+                    if (msg.body) {
+                        const transcript = document.createElement('div');
+                        transcript.style.marginTop = '4px';
+                        transcript.textContent = msg.body;
+                        bubble.appendChild(transcript);
+                    }
+                } else {
+                    bubble.textContent = msg.body;
+                }
+
                 messagesBox.appendChild(bubble);
             });
             messageCount = widgetConfig.messages.length;
@@ -425,6 +491,106 @@
             sendMessage();
         }
     });
+
+
+    // 8. Message vocal
+    //
+    // MediaRecorder enregistre tant que le bouton est actif. Le flux est
+    // relache des l'arret : le micro ne doit jamais rester ouvert apres coup.
+    let mediaRecorder = null;
+    let chunks = [];
+    let recording = false;
+    let recordTimer = null;
+    let recordSeconds = 0;
+
+    const hint = document.createElement('span');
+    hint.className = 'nonalix-recording-hint';
+
+    const stopStream = () => {
+        if (mediaRecorder?.stream) {
+            mediaRecorder.stream.getTracks().forEach((t) => t.stop());
+        }
+    };
+
+    const setRecordingUI = (on) => {
+        recording = on;
+        micButton.classList.toggle('recording', on);
+        if (on) {
+            recordSeconds = 0;
+            hint.textContent = '00:00';
+            micButton.parentNode.insertBefore(hint, micButton.nextSibling);
+            recordTimer = setInterval(() => {
+                recordSeconds += 1;
+                hint.textContent = `${String(Math.floor(recordSeconds / 60)).padStart(2, '0')}:${String(recordSeconds % 60).padStart(2, '0')}`;
+                // Garde-fou : au-dela, la transcription coute cher pour rien.
+                if (recordSeconds >= 120) toggleRecording();
+            }, 1000);
+        } else {
+            clearInterval(recordTimer);
+            hint.remove();
+        }
+    };
+
+    const sendVoice = async (blob) => {
+        const form = new FormData();
+        form.append('session_id', sessionId);
+        form.append('audio', blob, 'message.webm');
+
+        appendMessage('🎙 Message vocal envoyé…', 'in');
+
+        try {
+            const res = await fetch(`${baseUrl}/widget/voice/${tenantId}`, {
+                method: 'POST',
+                headers: { Accept: 'application/json' },
+                body: form,
+            });
+
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                notify(data.error ?? "Votre message vocal n'a pas pu être envoyé.", 'error');
+            }
+        } catch (err) {
+            notify("Votre message vocal n'a pas pu être envoyé.", 'error');
+        }
+    };
+
+    const toggleRecording = async () => {
+        if (recording) {
+            mediaRecorder?.stop();
+            return;
+        }
+
+        if (!navigator.mediaDevices?.getUserMedia) {
+            notify("Votre navigateur ne permet pas l'enregistrement audio.", 'error');
+            return;
+        }
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            chunks = [];
+            mediaRecorder = new MediaRecorder(stream);
+
+            mediaRecorder.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+            mediaRecorder.onstop = () => {
+                setRecordingUI(false);
+                stopStream();
+                const blob = new Blob(chunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+                if (blob.size > 0) sendVoice(blob);
+            };
+
+            mediaRecorder.start();
+            setRecordingUI(true);
+        } catch (err) {
+            notify('Micro indisponible. Autorisez son accès pour envoyer un message vocal.', 'error');
+        }
+    };
+
+    micButton.addEventListener('click', toggleRecording);
+
+    // Le micro ne s'affiche que si l'entreprise a active la voix.
+    const syncVoiceAvailability = () => {
+        micButton.style.display = widgetConfig.voice_enabled ? 'flex' : 'none';
+    };
 
     // Chargement initial silencieux
     loadConfig();

@@ -24,4 +24,15 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('widget')->as('widget.')->group(function () {
     Route::get('config/{tenant}', [WidgetChatController::class, 'config'])->name('config');
     Route::post('chat/{tenant}', [WidgetChatController::class, 'chat'])->name('chat');
+
+    // Un message vocal coûte bien plus cher qu'un message texte : transcription,
+    // génération, puis synthèse. Le plafond est donc plus bas.
+    Route::post('voice/{tenant}', [WidgetChatController::class, 'voice'])
+        ->middleware('throttle:12,1')
+        ->name('voice');
+
+    // Écoute d'un audio, réservée au visiteur qui en est l'auteur : le contrôle
+    // se fait sur l'identifiant de session, pas sur la seule connaissance de
+    // l'identifiant du message.
+    Route::get('audio/{tenant}/{message}', [WidgetChatController::class, 'audio'])->name('audio');
 });

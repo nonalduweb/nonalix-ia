@@ -191,14 +191,14 @@ const getStatusLabel = (status) => {
                             1. Choisissez votre offre ci-dessous et effectuez le virement (Wave, MTN MoMo, Moov) au numéro support :
                         </p>
                         <div class="rounded-lg bg-white dark:bg-slate-800 p-2.5 text-center font-bold text-slate-800 dark:text-white border border-brand-200/50 font-mono">
-                            +225 07 00 00 00 00
+                            +225 05 66 36 03 03
                         </div>
                         <p>
                             2. Envoyez la capture d'écran du reçu de paiement ainsi que le nom de votre entreprise par :
                         </p>
                         <ul class="list-disc list-inside pl-1 space-y-1 font-medium">
-                            <li>WhatsApp : <a href="https://wa.me/2250700000000" target="_blank" class="text-emerald-600 hover:underline">+225 07 00 00 00 00</a></li>
-                            <li>E-mail : <span class="text-brand-600">billing@nonalixia.com</span></li>
+                            <li>WhatsApp : <a href="https://wa.me/2250566360303" target="_blank" class="text-emerald-600 hover:underline">+225 05 66 36 03 03</a></li>
+                            <li>E-mail : <a href="mailto:contact@nonalixia.com" class="text-brand-600 hover:underline">contact@nonalixia.com</a></li>
                         </ul>
                         <p>
                             3. Un code d'accès unique vous sera transmis immédiatement pour être renseigné ci-dessus.

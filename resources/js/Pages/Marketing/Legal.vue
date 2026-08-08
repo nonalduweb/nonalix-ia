@@ -101,7 +101,8 @@ const scrollTo = (id) => {
                             <p><strong>Capital social :</strong> 1 000 000 FCFA</p>
                             <p><strong>RCCM :</strong> CI-ABJ-03-2026-B13-10152</p>
                             <p><strong>Siège social :</strong> Abidjan, Cocody Angré, Pétro Ivoire, près de BAOBAB Microfinance, Îlot 332, Lot 4172, Côte d’Ivoire</p>
-                            <p><strong>Adresse e-mail de contact :</strong> <a href="mailto:contact@nonalix-ci.com" class="text-brand-600 hover:underline">contact@nonalix-ci.com</a></p>
+                            <p><strong>Adresse e-mail de contact :</strong> <a href="mailto:contact@nonalixia.com" class="text-brand-600 hover:underline">contact@nonalixia.com</a> (Privilégiée)</p>
+                            <p><strong>Téléphone :</strong> +225 05 66 36 03 03</p>
                             <p><strong>Site officiel :</strong> <a href="https://nonalix-ci.com" target="_blank" class="text-brand-600 hover:underline">https://nonalix-ci.com</a></p>
                         </div>
                     </section>
@@ -294,7 +295,8 @@ const scrollTo = (id) => {
                             <p>Abidjan, Cocody Angré, Pétro Ivoire</p>
                             <p>Près de BAOBAB Microfinance, Îlot 332, Lot 4172</p>
                             <p>Côte d’Ivoire</p>
-                            <p class="pt-1"><strong>E-mail :</strong> <a href="mailto:contact@nonalix-ci.com" class="text-brand-600 hover:underline">contact@nonalix-ci.com</a></p>
+                            <p class="pt-1"><strong>E-mail :</strong> <a href="mailto:contact@nonalixia.com" class="text-brand-600 hover:underline">contact@nonalixia.com</a> (Privilégiée)</p>
+                            <p><strong>Téléphone :</strong> +225 05 66 36 03 03</p>
                         </div>
                     </section>
                 </main>
