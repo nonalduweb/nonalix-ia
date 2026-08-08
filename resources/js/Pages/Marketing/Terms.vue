@@ -20,18 +20,15 @@ import MarketingLayout from '@/Layouts/MarketingLayout.vue';
                 Conditions générales d'utilisation
             </h1>
 
-            <div class="mb-10 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                <strong>Gabarit à faire valider.</strong> Les clauses techniques
-                correspondent au fonctionnement réel du service. Les clauses
-                contractuelles doivent être arbitrées et validées juridiquement avant
-                publication.
+            <div class="mb-10 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900/50">
+                Les présentes Conditions Générales d'Utilisation décrivent le cadre technique et contractuel du service NONALIX IA, édité et exploité par NONALIX CI SARL.
             </div>
 
             <div class="space-y-8 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
                 <section>
                     <h2 class="mb-2 text-lg font-semibold text-slate-900 dark:text-slate-100">1. Objet</h2>
                     <p>
-                        Nonalix IA met à disposition une plateforme permettant à une
+                        NONALIX CI SARL met à disposition par l'intermédiaire de sa plateforme NONALIX IA un service permettant à une
                         entreprise de connecter son propre numéro WhatsApp Business et d'y
                         déployer un agent conversationnel automatisé.
                     </p>
@@ -44,7 +41,7 @@ import MarketingLayout from '@/Layouts/MarketingLayout.vue';
                     <p>
                         Le client fournit son propre compte WhatsApp Business et ses
                         propres identifiants Meta. Il en conserve la pleine propriété et
-                        peut révoquer l'accès de Nonalix à tout moment en retirant l'URL
+                        peut révoquer l'accès de la plateforme à tout moment en retirant l'URL
                         de webhook depuis sa console Meta.
                     </p>
                     <p class="mt-2">
@@ -93,12 +90,14 @@ import MarketingLayout from '@/Layouts/MarketingLayout.vue';
                     </h2>
                     <p>
                         Le service dépend de la disponibilité de tiers — Meta et les
-                        fournisseurs de modèles d'IA — sur lesquels Nonalix n'a pas de
+                        fournisseurs de modèles d'IA — sur lesquels NONALIX CI SARL n'a pas de
                         maîtrise. En cas d'indisponibilité d'un fournisseur d'IA, un
                         mécanisme de repli est appliqué et, à défaut, la conversation est
                         transférée à un opérateur humain.
                     </p>
-                    <p class="mt-2">[niveau d'engagement de disponibilité à définir]</p>
+                    <p class="mt-2">
+                        NONALIX CI SARL met en œuvre les moyens techniques adéquats pour assurer une disponibilité de la plateforme 24 heures sur 24 et 7 jours sur 7. Les interventions planifiées de maintenance font l'objet d'une information préalable dans la mesure du possible.
+                    </p>
                 </section>
 
                 <section>
@@ -109,7 +108,7 @@ import MarketingLayout from '@/Layouts/MarketingLayout.vue';
                         Les données de chaque entreprise sont strictement cloisonnées.
                         Elles ne sont utilisées ni pour entraîner de modèle, ni à des fins
                         publicitaires. Les modalités détaillées figurent dans la
-                        <a href="/confidentialite" class="underline">politique de confidentialité</a>.
+                        <Link href="/confidentialite" class="underline">politique de confidentialité</Link>.
                     </p>
                 </section>
 
@@ -118,7 +117,7 @@ import MarketingLayout from '@/Layouts/MarketingLayout.vue';
                         7. Suspension
                     </h2>
                     <p>
-                        Nonalix peut suspendre un compte en cas d'usage manifestement
+                        NONALIX CI SARL peut suspendre un compte en cas d'usage manifestement
                         illicite, de non-respect des politiques Meta ou d'impayé
                         persistant. Toute suspension est motivée par écrit et notifiée. Les
                         données du client sont conservées pendant la période de suspension.
@@ -141,7 +140,9 @@ import MarketingLayout from '@/Layouts/MarketingLayout.vue';
                     <h2 class="mb-2 text-lg font-semibold text-slate-900 dark:text-slate-100">
                         9. Responsabilité et droit applicable
                     </h2>
-                    <p>[clauses de responsabilité, juridiction compétente et droit applicable à définir]</p>
+                    <p>
+                        La responsabilité de NONALIX CI SARL est limitée aux dommages directs et prévisibles résultant de l'exécution du service, dans la limite des montants perçus au titre de l'abonnement en cours. Les présentes CGU sont régies par le droit ivoirien. Tout litige relatif à leur validité, leur interprétation ou leur exécution sera soumis à la juridiction compétente d'Abidjan, Côte d'Ivoire.
+                    </p>
                 </section>
             </div>
         </article>

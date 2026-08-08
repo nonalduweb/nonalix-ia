@@ -40,9 +40,9 @@ const dataCategories = [
 ];
 
 const subprocessors = [
-    ['Meta Platforms', 'Acheminement des messages WhatsApp', '[zone de traitement]'],
-    ['[fournisseur IA retenu]', 'Génération des réponses et vectorisation', '[zone de traitement]'],
-    ['[hébergeur]', 'Hébergement de l\'infrastructure et des bases de données', '[zone de traitement]'],
+    ['Meta Platforms Inc.', 'Acheminement des messages WhatsApp', 'États-Unis / Union Européenne'],
+    ['OpenAI / Anthropic / Google', 'Génération des réponses et vectorisation', 'États-Unis / Union Européenne'],
+    ['Hostinger International Ltd.', 'Hébergement de l\'infrastructure et des bases de données', 'Chypre / Union Européenne'],
 ];
 </script>
 
@@ -53,17 +53,14 @@ const subprocessors = [
         <article class="mx-auto max-w-3xl px-4 py-16">
             <h1 class="mb-8 text-3xl font-semibold tracking-tight">Politique de confidentialité</h1>
 
-            <div class="mb-10 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                <strong>Gabarit à faire valider.</strong> Les traitements décrits
-                correspondent au fonctionnement réel de la plateforme, mais les mentions
-                entre crochets doivent être complétées et l'ensemble revu par un juriste
-                avant publication.
+            <div class="mb-10 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900/50">
+                La protection de vos données personnelles est une priorité. Les traitements décrits ci-dessous correspondent aux activités réelles de la plateforme exploitée par NONALIX CI SARL.
             </div>
 
             <section class="mb-10">
                 <h2 class="mb-3 text-lg font-semibold">Rôles</h2>
                 <p class="mb-3 text-sm text-slate-600 dark:text-slate-300">
-                    Nonalix IA agit à deux titres distincts :
+                    NONALIX CI SARL (pour son produit NONALIX IA) agit à deux titres distincts :
                 </p>
                 <ul class="space-y-2 text-sm text-slate-600 dark:text-slate-300">
                     <li>
@@ -123,7 +120,7 @@ const subprocessors = [
                     </li>
                     <li>Aucune donnée n'est revendue ni cédée à des fins publicitaires.</li>
                     <li>
-                        Les équipes Nonalix n'accèdent pas librement aux données d'un
+                        Les équipes de NONALIX CI SARL n'accèdent pas librement aux données d'un
                         client : toute consultation passe par une session d'assistance
                         limitée dans le temps et intégralement journalisée.
                     </li>
@@ -153,7 +150,7 @@ const subprocessors = [
                 <p class="mt-3 text-sm text-slate-600 dark:text-slate-300">
                     Toute demande relative aux contacts d'une entreprise cliente doit être
                     adressée à cette entreprise, qui en est responsable. Pour les autres
-                    demandes : <strong>[adresse de contact vie privée]</strong>.
+                    demandes concernant vos données personnelles : <strong><a href="mailto:contact@nonalix-ci.com" class="text-brand-600 hover:underline">contact@nonalix-ci.com</a></strong>.
                 </p>
             </section>
         </article>

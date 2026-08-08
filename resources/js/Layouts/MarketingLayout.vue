@@ -43,7 +43,7 @@ const year = new Date().getFullYear();
 
         <footer class="mt-24 border-t border-slate-100">
             <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4 px-6 py-10 text-sm text-slate-500">
-                <p>© {{ year }} Nonalix IA</p>
+                <p>© {{ year }} NONALIX CI SARL. Tous droits réservés. <span class="hidden sm:inline text-slate-300 mx-1">|</span> <span class="block sm:inline text-slate-400">NONALIX IA est un produit de NONALIX CI</span></p>
 
                 <nav class="flex flex-wrap gap-6">
                     <Link href="/mentions-legales" class="transition hover:text-slate-900">Mentions légales</Link>

@@ -490,6 +490,26 @@ const relative = (iso) => {
 const toggleSidebar = () => {
     showSidebar.value = !showSidebar.value;
 };
+
+// -- Messages vocaux ----------------------------------------------------------
+// Un message est vocal des lors qu'il porte un audio : le type suffit, mais on
+// verifie aussi la presence du fichier pour ne pas afficher un lecteur vide.
+const isVoice = (msg) => msg.type === 'audio' && !!msg.media?.storage_path;
+
+const voiceDuration = (msg) => {
+    const s = msg.media?.duration_seconds;
+    if (!s) return null;
+    return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(Math.round(s % 60)).padStart(2, '0')}`;
+};
+
+// La transcription est repliee par defaut : elle encombrerait le fil.
+const openTranscripts = ref(new Set());
+
+const toggleTranscript = (id) => {
+    const next = new Set(openTranscripts.value);
+    next.has(id) ? next.delete(id) : next.add(id);
+    openTranscripts.value = next;
+};
 </script>
 
 <template>
@@ -718,8 +738,39 @@ const toggleSidebar = () => {
                                 class="max-w-[70%] rounded-xl px-3 py-2 text-xs shadow-xs relative group"
                                 :class="bubble(msg)"
                             >
-                                <p v-if="editingDraftId !== msg.id" class="whitespace-pre-wrap leading-relaxed">{{ msg.body }}</p>
-                                
+                                <!-- Message vocal : on écoute d'abord, on lit
+                                     ensuite. La transcription reste accessible
+                                     — c'est elle qui permet de comprendre un
+                                     échange sans écouter chaque fichier. -->
+                                <div v-if="isVoice(msg)" class="space-y-1.5">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-[11px] font-semibold opacity-80">🎙 Message vocal</span>
+                                        <span v-if="voiceDuration(msg)" class="text-[10px] opacity-60">{{ voiceDuration(msg) }}</span>
+                                    </div>
+
+                                    <audio
+                                        :src="`/messages/${msg.id}/audio`"
+                                        controls
+                                        preload="none"
+                                        class="h-8 w-full max-w-[240px]"
+                                    />
+
+                                    <button
+                                        v-if="msg.body"
+                                        type="button"
+                                        class="block text-[10px] underline opacity-70 hover:opacity-100 cursor-pointer"
+                                        @click="toggleTranscript(msg.id)"
+                                    >
+                                        {{ openTranscripts.has(msg.id) ? 'Masquer la transcription' : 'Voir la transcription' }}
+                                    </button>
+
+                                    <p v-if="openTranscripts.has(msg.id)" class="whitespace-pre-wrap leading-relaxed opacity-90">
+                                        {{ msg.body }}
+                                    </p>
+                                </div>
+
+                                <p v-else-if="editingDraftId !== msg.id" class="whitespace-pre-wrap leading-relaxed">{{ msg.body }}</p>
+
                                 <!-- Éditeur de brouillon -->
                                 <div v-if="msg.status === 'draft' && editingDraftId === msg.id" class="w-full space-y-2 mt-1">
                                     <textarea 

@@ -16,6 +16,7 @@ use App\Http\Controllers\App\KnowledgeDocumentController;
 use App\Http\Controllers\App\LeadController;
 use App\Http\Controllers\App\SalesDashboardController;
 use App\Http\Controllers\App\MessageController;
+use App\Http\Controllers\App\MessageMediaController;
 use App\Http\Controllers\App\Settings\AgentController;
 use App\Http\Controllers\App\Settings\AgentSandboxController;
 use App\Http\Controllers\App\Settings\AgentVoiceController;
@@ -176,6 +177,10 @@ Route::middleware(['auth', 'verified', '2fa', 'tenant'])->group(function () {
     Route::post('conversations/{conversation}/messages/{message}/send-draft', [MessageController::class, 'sendDraft'])
         ->middleware('quota:messages_sent')
         ->name('conversations.messages.send-draft');
+
+    // Audio d'un message : disque privé, autorisation par conversation.
+    Route::get('messages/{message}/audio', MessageMediaController::class)
+        ->name('messages.audio');
 
     Route::post('conversations/{conversation}/notes', [ConversationNoteController::class, 'store'])
         ->name('conversations.notes.store');
