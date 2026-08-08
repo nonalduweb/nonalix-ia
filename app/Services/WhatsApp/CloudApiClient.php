@@ -193,8 +193,15 @@ class CloudApiClient
         $url = $this->url($this->account->phone_number_id.'/media');
 
         try {
-            $response = $this->request()
+            // PAS `request()` : il se termine par `asJson()`, qui fixe l'en-tête
+            // Content-Type à application/json. `attach()` bascule bien le corps
+            // en multipart, mais cet en-tête reste — Meta reçoit alors un corps
+            // multipart annoncé comme du JSON, ne parvient à lire aucun champ,
+            // et répond « The parameter messaging_product is required ».
+            $response = Http::withToken((string) $this->account->access_token)
                 ->timeout(60)
+                ->connectTimeout((int) config('whatsapp.http.connect_timeout', 5))
+                ->acceptJson()
                 ->attach('file', $bytes, $filename, ['Content-Type' => $mimeType])
                 ->post($url, [
                     'messaging_product' => 'whatsapp',

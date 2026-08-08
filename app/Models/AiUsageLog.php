@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Enums\AiProvider;
 use App\Models\Concerns\BelongsToTenant;
 use App\Models\Concerns\HasUuidPrimaryKey;
 use Illuminate\Database\Eloquent\Model;
@@ -32,7 +31,13 @@ class AiUsageLog extends Model
     protected function casts(): array
     {
         return [
-            'provider'      => AiProvider::class,
+            // Volontairement PAS casté en AiProvider. Cette énumération
+            // désigne les fournisseurs de CONVERSATION — ceux qu'un client
+            // peut choisir pour son agent. Le journal, lui, enregistre tout ce
+            // qui est facturé, voix comprise : y forcer ElevenLabs aurait
+            // contaminé six `match` exhaustifs et l'aurait fait apparaître
+            // comme un LLM sélectionnable. La colonne reste une chaîne, et les
+            // écrans d'usage agrègent déjà en SQL.
             'input_tokens'  => 'integer',
             'output_tokens' => 'integer',
             // Micro-centimes d'euro. Entier : aucun arrondi flottant sur un coût.
