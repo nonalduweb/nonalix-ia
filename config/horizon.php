@@ -50,7 +50,11 @@ return [
         // qui attend. Priorité maximale et parallélisme élevé.
         'realtime' => [
             'connection'   => 'redis',
-            'queue'        => ['webhooks', 'whatsapp'],
+            // `email` figurait dans le code (SendEmailMessageJob) sans qu'aucun
+            // superviseur ne la traite : les réponses par courrier partaient en
+            // file pour n'en jamais sortir. Elle relève de la même urgence que
+            // WhatsApp — c'est un client qui attend.
+            'queue'        => ['webhooks', 'whatsapp', 'email'],
             'balance'      => 'auto',
             'autoScalingStrategy' => 'time',
             'minProcesses' => 2,

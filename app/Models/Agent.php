@@ -23,7 +23,7 @@ class Agent extends Model
     use HasUuidPrimaryKey;
 
     protected $fillable = [
-        'name', 'provider', 'model', 'api_key', 'temperature', 'max_tokens',
+        'name', 'provider', 'model', 'api_key', 'elevenlabs_api_key', 'temperature', 'max_tokens',
         'system_prompt', 'persona', 'tone', 'language',
         'greeting_message', 'fallback_message',
         'memory_window', 'rag_enabled', 'rag_top_k', 'rag_min_score',
@@ -31,14 +31,17 @@ class Agent extends Model
         'is_active', 'settings',
     ];
 
-    protected $hidden = ['api_key'];
+    // Ces deux clés ne sortent jamais du serveur : ni en réponse Inertia, ni
+    // en JSON, ni dans un événement diffusé.
+    protected $hidden = ['api_key', 'elevenlabs_api_key'];
 
     protected function casts(): array
     {
         return [
             'provider'          => AiProvider::class,
-            // Clé propre au tenant : chiffrée au repos.
-            'api_key'           => 'encrypted',
+            // Clés propres au tenant : chiffrées au repos.
+            'api_key'            => 'encrypted',
+            'elevenlabs_api_key' => 'encrypted',
             'temperature'       => 'float',
             'max_tokens'        => 'integer',
             'memory_window'     => 'integer',
@@ -86,6 +89,62 @@ class Agent extends Model
     public function allowsTool(string $tool): bool
     {
         return in_array($tool, $this->enabled_tools ?? [], true);
+    }
+
+    // -- Voix ------------------------------------------------------------------
+
+    public function voiceEnabled(): bool
+    {
+        return (bool) ($this->settings['voice_enabled'] ?? false);
+    }
+
+    public function voiceId(): ?string
+    {
+        return $this->settings['elevenlabs_voice_id']
+            ?? config('elevenlabs.default_voice_id');
+    }
+
+    /** `auto` laisse ElevenLabs détecter la langue parlée. */
+    public function voiceLanguage(): string
+    {
+        return (string) ($this->settings['voice_language'] ?? 'auto');
+    }
+
+    /**
+     * Comment répondre à un message vocal : `text`, `voice` ou `same_as_user`.
+     *
+     * Par défaut `same_as_user` — répondre dans le format employé par le
+     * client est ce qui surprend le moins.
+     */
+    public function voiceResponseMode(): string
+    {
+        $mode = (string) ($this->settings['voice_response_mode'] ?? 'same_as_user');
+
+        return in_array($mode, ['text', 'voice', 'same_as_user'], true) ? $mode : 'same_as_user';
+    }
+
+    /**
+     * Faut-il répondre en audio à un message reçu dans ce format ?
+     *
+     * Déterministe, et c'est le point : `same_as_user` signifie texte pour du
+     * texte, vocal pour du vocal — jamais une interprétation.
+     */
+    public function shouldReplyWithVoice(bool $incomingWasAudio): bool
+    {
+        if (! $this->voiceEnabled()) {
+            return false;
+        }
+
+        return match ($this->voiceResponseMode()) {
+            'voice'        => true,
+            'text'         => false,
+            default        => $incomingWasAudio,
+        };
+    }
+
+    public function realtimeVoiceEnabled(): bool
+    {
+        return $this->voiceEnabled() && (bool) ($this->settings['voice_realtime_enabled'] ?? false);
     }
 
     public function effectiveFallbackMessage(): string
