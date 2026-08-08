@@ -114,6 +114,7 @@ return Application::configure(basePath: dirname(__DIR__))
         );
 
         $middleware->alias([
+            'email-webhook' => \App\Http\Middleware\VerifyEmailWebhookSecret::class,
             'tenant'      => ResolveTenant::class,
             'super-admin' => EnsureSuperAdmin::class,
             '2fa'         => EnsureTwoFactorIsConfirmed::class,

@@ -31,8 +31,8 @@ const logout = () => router.post('/logout');
         -->
         <header class="bg-slate-900 text-slate-100">
             <div class="mx-auto flex max-w-7xl items-center gap-6 px-4 py-3">
-                <span class="text-sm font-semibold tracking-tight">
-                    Nonalix&nbsp;IA
+                <span class="flex items-center gap-2 text-sm font-semibold tracking-tight">
+                    <img src="/logo-nonalixia.png" alt="Nonalix IA" width="500" height="105" class="h-5 w-auto invert hue-rotate-180" />
                     <span class="ml-1 rounded bg-slate-700 px-1.5 py-0.5 text-[10px] uppercase tracking-wider">
                         administration
                     </span>

@@ -61,6 +61,9 @@ class TenantRegistrar
                 'plan_id'       => $code->plan_id,
                 'status'        => TenantStatus::Trial,
                 'trial_ends_at' => now()->addDays($code->trial_days),
+                // Adresse d'entrée du canal e-mail, frappée dès l'inscription :
+                // le client n'a jamais à la demander, elle l'attend.
+                'inbound_email_token' => Str::lower(Str::random(24)),
             ]);
 
             $owner = User::create([

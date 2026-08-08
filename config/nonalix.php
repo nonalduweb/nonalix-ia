@@ -113,6 +113,31 @@ return [
 
     /*
     |---------------------------------------------------------------------------
+    | Canal e-mail
+    |---------------------------------------------------------------------------
+    | On ne peut pas recevoir le courrier adressé à un domaine qu'on ne contrôle
+    | pas : chaque entreprise redirige le sien vers l'adresse que la plateforme
+    | lui frappe sur `inbound_domain`.
+    |
+    | `webhook_secret` voyage dans l'URL du webhook. C'est le dénominateur
+    | commun de tous les fournisseurs d'entrée — Mailgun, Postmark, SendGrid
+    | acceptent tous une URL arbitraire, là où chacun signe différemment.
+    | Sans lui, le point d'entrée serait ouvert : n'importe qui pourrait faire
+    | naître des conversations et déclencher des générations facturées.
+    */
+    'email' => [
+        'inbound_domain' => env('NONALIX_INBOUND_EMAIL_DOMAIN', 'in.nonalixia.com'),
+        'webhook_secret' => env('NONALIX_EMAIL_WEBHOOK_SECRET'),
+
+        // Expéditeur des réponses. Envoyer en se faisant passer pour l'adresse
+        // du client, sans SPF ni DKIM l'autorisant, ferait rejeter le message
+        // par DMARC ou le classerait en indésirable. On expédie donc depuis
+        // notre domaine, en portant le NOM du client.
+        'from_address' => env('NONALIX_EMAIL_FROM', 'bonjour@in.nonalixia.com'),
+    ],
+
+    /*
+    |---------------------------------------------------------------------------
     | Valeurs par défaut d'une nouvelle entreprise
     |---------------------------------------------------------------------------
     |

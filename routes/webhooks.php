@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Webhook\WhatsAppWebhookController;
+use App\Http\Controllers\Webhook\EmailWebhookController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -15,6 +16,13 @@ use Illuminate\Support\Facades\Route;
 | application Meta, donc son propre secret : sans ce segment, on ne saurait pas
 | avec quelle clé vérifier la signature.
 */
+
+// Le secret est dans le chemin : c'est le seul dénominateur commun aux
+// fournisseurs de courrier entrant, qui signent tous différemment mais
+// acceptent tous une URL arbitraire. Voir VerifyEmailWebhookSecret.
+Route::post('webhooks/email/{secret}', [EmailWebhookController::class, 'handle'])
+    ->middleware('email-webhook')
+    ->name('webhooks.email');
 
 Route::prefix('webhooks/whatsapp')
     ->as('webhooks.whatsapp.')

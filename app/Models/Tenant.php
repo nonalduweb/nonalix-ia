@@ -29,7 +29,7 @@ class Tenant extends Model
 
     protected $fillable = [
         'name', 'slug', 'status', 'trial_ends_at', 'plan_id',
-        'quota_overrides', 'settings',
+        'quota_overrides', 'settings', 'inbound_email_token',
     ];
 
     protected function casts(): array
@@ -40,7 +40,39 @@ class Tenant extends Model
             'suspended_at'    => 'immutable_datetime',
             'quota_overrides' => 'array',
             'settings'        => 'array',
+            'email_forward_verified_at' => 'immutable_datetime',
+            'email_probe_sent_at'       => 'immutable_datetime',
         ];
+    }
+
+    /**
+     * Adresse d'entrée du canal e-mail, frappée par la plateforme.
+     *
+     * Le jeton est distinct de `id`, qui est public — il figure dans le
+     * snippet du widget. Deviner l'un ne doit pas donner l'autre.
+     */
+    public function inboundEmailAddress(): ?string
+    {
+        if ($this->inbound_email_token === null) {
+            return null;
+        }
+
+        return 'in-'.$this->inbound_email_token.'@'.config('nonalix.email.inbound_domain');
+    }
+
+    /** Frappe le jeton d'entrée s'il manque, et le renvoie. */
+    public function ensureInboundEmailToken(): string
+    {
+        if ($this->inbound_email_token === null) {
+            $this->forceFill(['inbound_email_token' => \Illuminate\Support\Str::lower(\Illuminate\Support\Str::random(24))])->save();
+        }
+
+        return $this->inbound_email_token;
+    }
+
+    public function emailForwardIsVerified(): bool
+    {
+        return $this->email_forward_verified_at !== null;
     }
 
     // -- Relations -------------------------------------------------------------

@@ -15,7 +15,9 @@ const submit = () => form.post('/forgot-password');
 
     <div class="flex min-h-screen items-center justify-center px-4">
         <div class="w-full max-w-sm">
-            <h1 class="mb-1 text-center text-2xl font-semibold tracking-tight">Nonalix&nbsp;IA</h1>
+            <h1 class="mb-1 flex justify-center">
+                <img src="/logo-nonalixia.png" alt="Nonalix IA" width="500" height="105" class="h-9 w-auto dark:invert dark:hue-rotate-180" />
+            </h1>
             <p class="mb-8 text-center text-sm text-slate-500">Mot de passe oublié</p>
 
             <form class="card space-y-4" @submit.prevent="submit">

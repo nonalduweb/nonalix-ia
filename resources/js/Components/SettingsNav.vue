@@ -11,6 +11,7 @@ const items = [
     { label: 'Agent IA', href: '/settings/agent', key: 'agent' },
     { label: 'WhatsApp', href: '/settings/whatsapp', key: 'whatsapp' },
     { label: 'Widget Site Web', href: '/settings/widget', key: null },
+    { label: 'Canal e-mail', href: '/settings/email', key: null },
     { label: 'Facturation', href: '/settings/billing', key: null },
     { label: 'Prestations', href: '/settings/services', key: 'services' },
     { label: 'Questions fréquentes', href: '/settings/faqs', key: 'faqs' },

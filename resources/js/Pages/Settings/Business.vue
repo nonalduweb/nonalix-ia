@@ -137,9 +137,15 @@ const saveHours = () => {
                 </div>
 
                 <div>
-                    <label class="label" for="legal_name">
+                    <label class="label flex items-center gap-1" for="legal_name">
                         Raison sociale
                         <span class="text-red-500" aria-hidden="true">*</span>
+                        <span class="group relative cursor-help text-slate-400 hover:text-slate-600">
+                            ⓘ
+                            <span class="absolute bottom-6 left-1/2 -translate-x-1/2 hidden group-hover:block bg-slate-900 text-white text-[10px] font-normal p-2 rounded shadow-md z-50 w-48 leading-normal normal-case">
+                                Le nom légal ou commercial sous lequel l'agent se présente aux clients.
+                            </span>
+                        </span>
                     </label>
                     <input
                         id="legal_name"
@@ -158,9 +164,15 @@ const saveHours = () => {
                 </div>
 
                 <div>
-                    <label class="label" for="description">
+                    <label class="label flex items-center gap-1" for="description">
                         Activité
                         <span class="text-red-500" aria-hidden="true">*</span>
+                        <span class="group relative cursor-help text-slate-400 hover:text-slate-600">
+                            ⓘ
+                            <span class="absolute bottom-6 left-1/2 -translate-x-1/2 hidden group-hover:block bg-slate-900 text-white text-[10px] font-normal p-2 rounded shadow-md z-50 w-48 leading-normal normal-case">
+                                Décrivez précisément votre activité, ce que vous vendez et vos règles. L'agent s'appuiera dessus.
+                            </span>
+                        </span>
                     </label>
                     <textarea
                         id="description"
@@ -186,7 +198,15 @@ const saveHours = () => {
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="label" for="industry">Secteur</label>
+                        <label class="label flex items-center gap-1" for="industry">
+                            Secteur
+                            <span class="group relative cursor-help text-slate-400 hover:text-slate-600">
+                                ⓘ
+                                <span class="absolute bottom-6 left-1/2 -translate-x-1/2 hidden group-hover:block bg-slate-900 text-white text-[10px] font-normal p-2 rounded shadow-md z-50 w-48 leading-normal normal-case">
+                                    Le secteur d'activité pour adapter le comportement de l'agent.
+                                </span>
+                            </span>
+                        </label>
                         <input
                             id="industry"
                             v-model="profileForm.industry"
@@ -202,7 +222,15 @@ const saveHours = () => {
                         </datalist>
                     </div>
                     <div>
-                        <label class="label" for="phone">Téléphone</label>
+                        <label class="label flex items-center gap-1" for="phone">
+                            Téléphone
+                            <span class="group relative cursor-help text-slate-400 hover:text-slate-600">
+                                ⓘ
+                                <span class="absolute bottom-6 left-1/2 -translate-x-1/2 hidden group-hover:block bg-slate-900 text-white text-[10px] font-normal p-2 rounded shadow-md z-50 w-48 leading-normal normal-case">
+                                    Le numéro de téléphone officiel de l'entreprise.
+                                </span>
+                            </span>
+                        </label>
                         <input
                             id="phone"
                             v-model="profileForm.phone"
@@ -213,7 +241,15 @@ const saveHours = () => {
                         <p class="mt-1 text-xs text-slate-500">Communiqué sur demande.</p>
                     </div>
                     <div>
-                        <label class="label" for="email">E-mail</label>
+                        <label class="label flex items-center gap-1" for="email">
+                            E-mail
+                            <span class="group relative cursor-help text-slate-400 hover:text-slate-600">
+                                ⓘ
+                                <span class="absolute bottom-6 left-1/2 -translate-x-1/2 hidden group-hover:block bg-slate-900 text-white text-[10px] font-normal p-2 rounded shadow-md z-50 w-48 leading-normal normal-case">
+                                    L'adresse de contact principale de votre entreprise.
+                                </span>
+                            </span>
+                        </label>
                         <input
                             id="email"
                             v-model="profileForm.email"
@@ -226,7 +262,15 @@ const saveHours = () => {
                         </p>
                     </div>
                     <div>
-                        <label class="label" for="website">Site web</label>
+                        <label class="label flex items-center gap-1" for="website">
+                            Site web
+                            <span class="group relative cursor-help text-slate-400 hover:text-slate-600">
+                                ⓘ
+                                <span class="absolute bottom-6 left-1/2 -translate-x-1/2 hidden group-hover:block bg-slate-900 text-white text-[10px] font-normal p-2 rounded shadow-md z-50 w-48 leading-normal normal-case">
+                                    L'URL de votre site internet institutionnel ou e-commerce.
+                                </span>
+                            </span>
+                        </label>
                         <input
                             id="website"
                             v-model="profileForm.website"
@@ -241,7 +285,15 @@ const saveHours = () => {
                 </div>
 
                 <div>
-                    <label class="label" for="address_line1">Adresse</label>
+                    <label class="label flex items-center gap-1" for="address_line1">
+                        Adresse
+                        <span class="group relative cursor-help text-slate-400 hover:text-slate-600">
+                            ⓘ
+                            <span class="absolute bottom-6 left-1/2 -translate-x-1/2 hidden group-hover:block bg-slate-900 text-white text-[10px] font-normal p-2 rounded shadow-md z-50 w-48 leading-normal normal-case">
+                                L'adresse géographique complète de vos locaux.
+                            </span>
+                        </span>
+                    </label>
                     <input
                         id="address_line1"
                         v-model="profileForm.address_line1"
@@ -279,7 +331,15 @@ const saveHours = () => {
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="label" for="timezone">Fuseau horaire</label>
+                        <label class="label flex items-center gap-1" for="timezone">
+                            Fuseau horaire
+                            <span class="group relative cursor-help text-slate-400 hover:text-slate-600">
+                                ⓘ
+                                <span class="absolute bottom-6 left-1/2 -translate-x-1/2 hidden group-hover:block bg-slate-900 text-white text-[10px] font-normal p-2 rounded shadow-md z-50 w-48 leading-normal normal-case">
+                                    Détermine l'heure locale de l'entreprise pour gérer les horaires d'ouverture.
+                                </span>
+                            </span>
+                        </label>
                         <select id="timezone" v-model="profileForm.timezone" class="input">
                             <optgroup v-for="(zones, continent) in timezoneGroups" :key="continent" :label="continent">
                                 <option v-for="tz in zones" :key="tz" :value="tz">{{ tz }}</option>
@@ -292,7 +352,15 @@ const saveHours = () => {
                         </p>
                     </div>
                     <div>
-                        <label class="label" for="currency">Devise</label>
+                        <label class="label flex items-center gap-1" for="currency">
+                            Devise
+                            <span class="group relative cursor-help text-slate-400 hover:text-slate-600">
+                                ⓘ
+                                <span class="absolute bottom-6 left-1/2 -translate-x-1/2 hidden group-hover:block bg-slate-900 text-white text-[10px] font-normal p-2 rounded shadow-md z-50 w-48 leading-normal normal-case">
+                                    La devise monétaire par défaut pour l'affichage de vos tarifs.
+                                </span>
+                            </span>
+                        </label>
                         <select id="currency" v-model="profileForm.currency" class="input">
                             <option v-for="(label, code) in currencies" :key="code" :value="code">
                                 {{ label }}

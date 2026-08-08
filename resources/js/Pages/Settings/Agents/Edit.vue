@@ -38,6 +38,8 @@ const form = useForm({
     is_active: props.agent?.is_active ?? true,
     settings: {
         n8n_webhook_url: props.agent?.settings?.n8n_webhook_url ?? '',
+        email_mode: props.agent?.settings?.email_mode ?? 'assisted',
+        email_auto_categories: [...(props.agent?.settings?.email_auto_categories ?? ['faq', 'horaires', 'autre'])],
     },
 });
 
@@ -370,6 +372,43 @@ const resetTrial = async () => {
                                 ✕
                             </button>
                         </span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Module E-mail AI -->
+            <section class="card space-y-5">
+                <h2 class="text-sm font-semibold">Module E-mail AI</h2>
+                <p class="text-xs text-slate-500">
+                    Définissez comment l'agent gère les demandes reçues par e-mail.
+                </p>
+
+                <div>
+                    <label class="label text-xs" for="email_mode">Mode de fonctionnement</label>
+                    <select id="email_mode" v-model="form.settings.email_mode" class="input py-1.5 px-3 text-xs">
+                        <option value="assisted">Mode assisté (L'IA prépare la réponse -> validation humaine avant envoi)</option>
+                        <option value="automatic">Mode automatique (L'IA répond directement aux questions simples)</option>
+                    </select>
+                </div>
+
+                <div v-if="form.settings.email_mode === 'automatic'" class="space-y-3 p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-lg border border-slate-100 dark:border-slate-800/60">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Catégories de réponses automatiques</h3>
+                    <p class="text-[10px] text-slate-400 leading-normal">
+                        L'IA répondra directement aux demandes classées dans ces catégories. Les e-mails sensibles (paiements, litiges, réclamations) seront toujours enregistrés en brouillon et transférés à l'équipe.
+                    </p>
+                    <div class="space-y-2 mt-2">
+                        <label class="flex items-center gap-2.5 text-xs cursor-pointer select-none">
+                            <input type="checkbox" v-model="form.settings.email_auto_categories" value="faq" />
+                            <span>Questions fréquentes (FAQ, livraisons, retours)</span>
+                        </label>
+                        <label class="flex items-center gap-2.5 text-xs cursor-pointer select-none">
+                            <input type="checkbox" v-model="form.settings.email_auto_categories" value="horaires" />
+                            <span>Horaires &amp; disponibilités d'ouverture</span>
+                        </label>
+                        <label class="flex items-center gap-2.5 text-xs cursor-pointer select-none">
+                            <input type="checkbox" v-model="form.settings.email_auto_categories" value="autre" />
+                            <span>Demande d'informations simples / Tarifs généraux</span>
+                        </label>
                     </div>
                 </div>
             </section>

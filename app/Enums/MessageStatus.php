@@ -6,6 +6,7 @@ namespace App\Enums;
 
 enum MessageStatus: string
 {
+    case Draft     = 'draft';
     case Queued    = 'queued';
     case Sent      = 'sent';
     case Delivered = 'delivered';
@@ -15,6 +16,7 @@ enum MessageStatus: string
     public function label(): string
     {
         return match ($this) {
+            self::Draft     => 'Brouillon',
             self::Queued    => 'En file',
             self::Sent      => 'Envoyé',
             self::Delivered => 'Distribué',
@@ -32,6 +34,7 @@ enum MessageStatus: string
     public function rank(): int
     {
         return match ($this) {
+            self::Draft     => -1,
             self::Queued    => 0,
             self::Sent      => 1,
             self::Delivered => 2,

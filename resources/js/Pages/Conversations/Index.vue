@@ -423,10 +423,49 @@ const send = () => {
     });
 };
 
+// Draft validation and sending
+const editingDraftId = ref(null);
+const editDraftBody = ref('');
+
+const sendDraftMessage = (msg) => {
+    router.post(`/conversations/${props.conversation.id}/messages/${msg.id}/send-draft`, {}, {
+        preserveScroll: true,
+        onSuccess: () => {
+            router.reload({ only: ['messages', 'conversation'] });
+        }
+    });
+};
+
+const startEditDraft = (msg) => {
+    editingDraftId.value = msg.id;
+    editDraftBody.value = msg.body;
+};
+
+const cancelEditDraft = () => {
+    editingDraftId.value = null;
+    editDraftBody.value = '';
+};
+
+const saveAndSendDraft = (msg) => {
+    router.post(`/conversations/${props.conversation.id}/messages/${msg.id}/send-draft`, {
+        body: editDraftBody.value
+    }, {
+        preserveScroll: true,
+        onSuccess: () => {
+            editingDraftId.value = null;
+            editDraftBody.value = '';
+            router.reload({ only: ['messages', 'conversation'] });
+        }
+    });
+};
+
 // Bubble colors and alignments
 const alignment = (message) => (message.direction === 'in' ? 'justify-start' : 'justify-end');
 
 const bubble = (message) => {
+    if (message.status === 'draft') {
+        return 'bg-amber-50/60 text-slate-800 dark:bg-amber-950/20 dark:text-amber-100 border-2 border-dashed border-amber-300 dark:border-amber-700 rounded-tr-none';
+    }
     if (message.direction === 'in') {
         return 'bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100 rounded-tl-none border-l-2 border-slate-300 dark:border-slate-600';
     }
@@ -679,7 +718,51 @@ const toggleSidebar = () => {
                                 class="max-w-[70%] rounded-xl px-3 py-2 text-xs shadow-xs relative group"
                                 :class="bubble(msg)"
                             >
-                                <p class="whitespace-pre-wrap leading-relaxed">{{ msg.body }}</p>
+                                <p v-if="editingDraftId !== msg.id" class="whitespace-pre-wrap leading-relaxed">{{ msg.body }}</p>
+                                
+                                <!-- Éditeur de brouillon -->
+                                <div v-if="msg.status === 'draft' && editingDraftId === msg.id" class="w-full space-y-2 mt-1">
+                                    <textarea 
+                                        v-model="editDraftBody" 
+                                        rows="4" 
+                                        class="w-full text-xs p-2 border rounded bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500" 
+                                    />
+                                    <div class="flex gap-2 justify-end">
+                                        <button 
+                                            type="button"
+                                            @click="cancelEditDraft"
+                                            class="px-2 py-1 text-[10px] font-semibold text-slate-500 hover:underline cursor-pointer"
+                                        >
+                                            Annuler
+                                        </button>
+                                        <button 
+                                            type="button"
+                                            @click="saveAndSendDraft(msg)"
+                                            class="px-2.5 py-1 text-[10px] font-bold bg-amber-500 hover:bg-amber-600 text-white rounded transition cursor-pointer"
+                                        >
+                                            Enregistrer & Envoyer
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Actions du brouillon si non en cours d'édition -->
+                                <div v-if="msg.status === 'draft' && editingDraftId !== msg.id" class="mt-3 pt-2 border-t border-amber-200/50 dark:border-amber-800/40 flex items-center gap-2">
+                                    <button 
+                                        type="button"
+                                        @click="sendDraftMessage(msg)"
+                                        class="px-2 py-1 text-[10px] font-bold bg-amber-500 hover:bg-amber-600 text-white rounded transition cursor-pointer"
+                                    >
+                                        ✓ Valider & Envoyer
+                                    </button>
+                                    <button 
+                                        type="button"
+                                        @click="startEditDraft(msg)"
+                                        class="px-2 py-1 text-[10px] font-bold bg-slate-200 hover:bg-slate-300 text-slate-700 rounded dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 transition cursor-pointer"
+                                    >
+                                        ✏️ Modifier
+                                    </button>
+                                </div>
+
                                 <div class="mt-1 flex items-center justify-end gap-1 text-[9px] opacity-60">
                                     <span v-if="msg.sender_type === 'ai'" class="font-semibold text-teal-600 dark:text-teal-400">IA ·</span>
                                     <span v-else-if="msg.sender" class="font-semibold">{{ msg.sender.name }} ·</span>
@@ -690,8 +773,9 @@ const toggleSidebar = () => {
                                         <span v-if="msg.status === 'read'" class="text-sky-500 font-bold">✓✓</span>
                                         <span v-else-if="msg.status === 'delivered'" class="text-slate-400 font-bold">✓✓</span>
                                         <span v-else-if="msg.status === 'sent'" class="text-slate-400">✓</span>
-                                        <span v-else-if="msg.status === 'queued'">🕓</span>
+                                        <span v-else-if="msg.status === 'queued'">Glissant...</span>
                                         <span v-else-if="msg.status === 'failed'" class="text-red-500" title="Échec de l'envoi">⚠</span>
+                                        <span v-else-if="msg.status === 'draft'" class="text-amber-500 font-semibold">Brouillon</span>
                                     </span>
                                 </div>
                                 <p v-if="msg.error" class="mt-1 text-[9px] text-red-500 font-semibold">{{ msg.error }}</p>

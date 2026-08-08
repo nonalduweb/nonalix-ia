@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue';
 import { Link, usePage, router } from '@inertiajs/vue3';
+import ConfigCopilot from '@/Components/ConfigCopilot.vue';
 
 const page = usePage();
 
@@ -60,7 +61,18 @@ const logout = () => router.post('/logout');
 
         <header class="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
             <div class="mx-auto flex max-w-7xl items-center gap-6 px-4 py-3">
-                <span class="text-lg font-semibold tracking-tight">Nonalix&nbsp;IA</span>
+                <!-- `invert` seul retournerait aussi la teinte du N : le
+                     `hue-rotate` la ramène, si bien que le noir devient blanc
+                     et que le bleu de la marque reste bleu. -->
+                <Link href="/" class="shrink-0" aria-label="Nonalix IA — accueil">
+                    <img
+                        src="/logo-nonalixia.png"
+                        alt="Nonalix IA"
+                        class="h-7 w-auto dark:invert dark:hue-rotate-180"
+                        width="500"
+                        height="105"
+                    />
+                </Link>
 
                 <nav class="flex flex-1 gap-1">
                     <Link
@@ -105,5 +117,8 @@ const logout = () => router.post('/logout');
 
             <slot />
         </main>
+
+        <!-- Copilote d'assistance à la configuration -->
+        <ConfigCopilot />
     </div>
 </template>

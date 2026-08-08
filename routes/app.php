@@ -20,6 +20,7 @@ use App\Http\Controllers\App\Settings\AgentController;
 use App\Http\Controllers\App\Settings\AgentSandboxController;
 use App\Http\Controllers\App\Settings\BillingController;
 use App\Http\Controllers\App\Settings\BusinessProfileController;
+use App\Http\Controllers\App\Settings\EmailChannelController;
 use App\Http\Controllers\App\Settings\FaqController;
 use App\Http\Controllers\App\Settings\ServiceController;
 use App\Http\Controllers\App\Settings\TeamUserController;
@@ -169,6 +170,12 @@ Route::middleware(['auth', 'verified', '2fa', 'tenant'])->group(function () {
         ->middleware('quota:messages_sent')
         ->name('conversations.messages.store');
 
+    // Même quota que l'envoi direct : un brouillon validé est un message
+    // sortant, il doit peser pareil sur l'offre du client.
+    Route::post('conversations/{conversation}/messages/{message}/send-draft', [MessageController::class, 'sendDraft'])
+        ->middleware('quota:messages_sent')
+        ->name('conversations.messages.send-draft');
+
     Route::post('conversations/{conversation}/notes', [ConversationNoteController::class, 'store'])
         ->name('conversations.notes.store');
 
@@ -217,6 +224,11 @@ Route::middleware(['auth', 'verified', '2fa', 'tenant'])->group(function () {
         Route::post('whatsapp/test', [WhatsAppAccountController::class, 'test'])->name('whatsapp.test');
         Route::post('whatsapp/sync-templates', [WhatsAppAccountController::class, 'syncTemplates'])
             ->name('whatsapp.sync-templates');
+
+        Route::get('email',          [EmailChannelController::class, 'edit'])->name('email.edit');
+        Route::post('email/probe',   [EmailChannelController::class, 'probe'])
+            ->middleware('throttle:6,1')
+            ->name('email.probe');
 
         Route::get('widget',         [WidgetSettingsController::class, 'edit'])->name('widget.edit');
         Route::put('widget',         [WidgetSettingsController::class, 'update'])->name('widget.update');
