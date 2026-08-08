@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import SettingsNav from '@/Components/SettingsNav.vue';
@@ -38,6 +38,10 @@ const form = useForm({
     is_active: props.agent?.is_active ?? true,
     settings: {
         n8n_webhook_url: props.agent?.settings?.n8n_webhook_url ?? '',
+        voice_enabled: props.agent?.settings?.voice_enabled ?? false,
+        elevenlabs_voice_id: props.agent?.settings?.elevenlabs_voice_id ?? '',
+        voice_language: props.agent?.settings?.voice_language ?? 'auto',
+        voice_response_mode: props.agent?.settings?.voice_response_mode ?? 'same_as_user',
         email_mode: props.agent?.settings?.email_mode ?? 'assisted',
         email_auto_categories: [...(props.agent?.settings?.email_auto_categories ?? ['faq', 'horaires', 'autre'])],
     },
@@ -173,6 +177,72 @@ const resetTrial = async () => {
         headers: { 'Accept': 'application/json', 'X-XSRF-TOKEN': csrfToken() },
     }).catch(() => {});
 };
+
+// -- Voix & audio -------------------------------------------------------------
+// La liste des voix vient du serveur : la cle ElevenLabs ne doit jamais
+// atteindre le navigateur.
+const voiceState = ref({ configured: false, health: null, voices: [], usage: null });
+const voicesLoading = ref(false);
+const voicePreviewing = ref(false);
+const voicePreviewError = ref(null);
+const voicePreviewAudio = ref(null);
+
+const loadVoices = async () => {
+    if (isNew.value || voicesLoading.value) return;
+
+    voicesLoading.value = true;
+
+    try {
+        const res = await fetch(`/settings/agent/${props.agent.id}/voice`, {
+            headers: { Accept: 'application/json' },
+        });
+        if (res.ok) voiceState.value = await res.json();
+    } catch (err) {
+        // Une liste de voix indisponible ne doit pas empecher de configurer
+        // le reste de l'agent.
+    } finally {
+        voicesLoading.value = false;
+    }
+};
+
+const playPreview = async () => {
+    if (!form.settings.elevenlabs_voice_id || voicePreviewing.value) return;
+
+    voicePreviewing.value = true;
+    voicePreviewError.value = null;
+
+    try {
+        const res = await fetch(`/settings/agent/${props.agent.id}/voice/preview`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+                'X-XSRF-TOKEN': csrfToken(),
+            },
+            body: JSON.stringify({
+                voice_id: form.settings.elevenlabs_voice_id,
+                language: form.settings.voice_language === 'en' ? 'en' : 'fr',
+            }),
+        });
+
+        if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            voicePreviewError.value = data.error ?? "L'echantillon n'a pas pu etre genere.";
+            return;
+        }
+
+        const blob = await res.blob();
+        if (voicePreviewAudio.value) URL.revokeObjectURL(voicePreviewAudio.value);
+        voicePreviewAudio.value = URL.createObjectURL(blob);
+        new Audio(voicePreviewAudio.value).play();
+    } catch (err) {
+        voicePreviewError.value = 'Connexion interrompue.';
+    } finally {
+        voicePreviewing.value = false;
+    }
+};
+
+onMounted(loadVoices);
 </script>
 
 <template>
@@ -445,6 +515,116 @@ const resetTrial = async () => {
 
             </section>
 
+            <!-- Voix & audio : visible, parce que c'est un choix métier -->
+            <section v-if="!isNew" class="card space-y-5 lg:col-span-2">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <h2 class="text-sm font-semibold">Voix &amp; audio</h2>
+                        <p class="mt-1 text-xs leading-normal text-slate-500">
+                            Votre agent comprend les messages vocaux de vos clients, et peut leur répondre de vive voix.
+                        </p>
+                    </div>
+
+                    <span
+                        v-if="voiceState.health"
+                        class="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider"
+                        :class="voiceState.health.ok
+                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300'
+                            : 'bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300'"
+                    >
+                        {{ voiceState.health.ok ? 'Connecté' : 'Non configuré' }}
+                    </span>
+                </div>
+
+                <p v-if="voiceState.health && !voiceState.health.ok" class="rounded-lg bg-amber-50 px-3.5 py-2.5 text-xs text-amber-800 dark:bg-amber-950/30 dark:text-amber-300">
+                    {{ voiceState.health.message }}
+                </p>
+
+                <label class="flex items-center gap-2 text-sm cursor-pointer select-none">
+                    <input v-model="form.settings.voice_enabled" type="checkbox" />
+                    <span class="font-medium">Activer les fonctionnalités vocales</span>
+                </label>
+
+                <div v-if="form.settings.voice_enabled" class="grid gap-5 lg:grid-cols-2">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="label" for="voice">Voix</label>
+                            <div class="flex gap-2">
+                                <select id="voice" v-model="form.settings.elevenlabs_voice_id" class="input">
+                                    <option value="">{{ voicesLoading ? 'Chargement…' : 'Choisir une voix' }}</option>
+                                    <option v-for="v in voiceState.voices" :key="v.voice_id" :value="v.voice_id">
+                                        {{ v.name }}
+                                    </option>
+                                </select>
+                                <button
+                                    type="button"
+                                    class="btn-secondary shrink-0 px-3 py-2 text-xs font-semibold cursor-pointer"
+                                    :disabled="!form.settings.elevenlabs_voice_id || voicePreviewing"
+                                    @click="playPreview"
+                                >
+                                    {{ voicePreviewing ? '…' : '▶ Écouter' }}
+                                </button>
+                            </div>
+                            <p v-if="voicePreviewError" class="mt-1 text-xs text-red-600">{{ voicePreviewError }}</p>
+                        </div>
+
+                        <div>
+                            <label class="label" for="voice_lang">Langue</label>
+                            <select id="voice_lang" v-model="form.settings.voice_language" class="input">
+                                <option value="auto">Détection automatique</option>
+                                <option value="fra">Français</option>
+                                <option value="eng">Anglais</option>
+                            </select>
+                            <p class="mt-1 text-xs text-slate-500">
+                                La détection automatique convient si vos clients écrivent dans plusieurs langues.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <span class="label mb-1 block">Répondre aux messages vocaux par</span>
+
+                        <label class="flex cursor-pointer select-none gap-3 rounded-lg border p-3 transition"
+                               :class="form.settings.voice_response_mode === 'text' ? 'border-brand-500 bg-brand-50/40 dark:bg-slate-800/60' : 'border-slate-200 dark:border-slate-800'">
+                            <input v-model="form.settings.voice_response_mode" type="radio" value="text" class="mt-0.5" />
+                            <span>
+                                <span class="text-sm font-medium">Texte</span>
+                                <span class="mt-0.5 block text-xs text-slate-500">
+                                    Les messages vocaux reçus sont compris par l'agent, mais la réponse est écrite.
+                                </span>
+                            </span>
+                        </label>
+
+                        <label class="flex cursor-pointer select-none gap-3 rounded-lg border p-3 transition"
+                               :class="form.settings.voice_response_mode === 'voice' ? 'border-brand-500 bg-brand-50/40 dark:bg-slate-800/60' : 'border-slate-200 dark:border-slate-800'">
+                            <input v-model="form.settings.voice_response_mode" type="radio" value="voice" class="mt-0.5" />
+                            <span>
+                                <span class="text-sm font-medium">Vocal</span>
+                                <span class="mt-0.5 block text-xs text-slate-500">
+                                    L'agent répond toujours de vive voix, même à un message écrit.
+                                </span>
+                            </span>
+                        </label>
+
+                        <label class="flex cursor-pointer select-none gap-3 rounded-lg border p-3 transition"
+                               :class="form.settings.voice_response_mode === 'same_as_user' ? 'border-brand-500 bg-brand-50/40 dark:bg-slate-800/60' : 'border-slate-200 dark:border-slate-800'">
+                            <input v-model="form.settings.voice_response_mode" type="radio" value="same_as_user" class="mt-0.5" />
+                            <span>
+                                <span class="text-sm font-medium">Même format que le client</span>
+                                <span class="mt-0.5 block text-xs text-slate-500">
+                                    Il écrit, l'agent écrit. Il parle, l'agent parle.
+                                </span>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+                <p v-if="form.settings.voice_enabled && voiceState.usage?.limit" class="text-xs text-slate-400">
+                    Consommation ElevenLabs : {{ voiceState.usage.used?.toLocaleString('fr-FR') }} /
+                    {{ voiceState.usage.limit?.toLocaleString('fr-FR') }} caractères.
+                </p>
+            </section>
+
             <!-- Réglages avancés : repliés, parce qu'un client n'a pas à les arbitrer -->
             <section class="card lg:col-span-2">
                 <button
@@ -588,7 +768,7 @@ const resetTrial = async () => {
             </div>
         </form>
 
-        <Modal :open="previewing" title="Contexte système envoyé au modèle" max-width="max-w-3xl" @close="previewing = false">
+        <Modal :open="voicePreviewing" title="Contexte système envoyé au modèle" max-width="max-w-3xl" @close="voicePreviewing = false">
             <p class="mb-3 text-xs text-slate-500">
                 Aperçu des instructions combinées de l'entreprise (FAQ, Prestations, Horaires) envoyées au LLM à chaque message.
             </p>

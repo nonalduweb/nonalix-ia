@@ -262,6 +262,14 @@ class AgentController
             'is_active'                => ['boolean'],
             'settings'                 => ['nullable', 'array'],
             'settings.n8n_webhook_url' => ['nullable', 'url', 'max:2048'],
+
+            // Voix. `voice_response_mode` est borne a trois valeurs : le
+            // modele retombe sur `same_as_user` devant tout le reste, mais
+            // autant refuser une saisie invalide des l'entree.
+            'settings.voice_enabled'       => ['boolean'],
+            'settings.elevenlabs_voice_id' => ['nullable', 'string', 'max:64'],
+            'settings.voice_language'      => ['nullable', 'string', 'max:10'],
+            'settings.voice_response_mode' => ['nullable', Rule::in(['text', 'voice', 'same_as_user'])],
         ]);
     }
 }

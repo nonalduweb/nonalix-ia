@@ -18,6 +18,7 @@ use App\Http\Controllers\App\SalesDashboardController;
 use App\Http\Controllers\App\MessageController;
 use App\Http\Controllers\App\Settings\AgentController;
 use App\Http\Controllers\App\Settings\AgentSandboxController;
+use App\Http\Controllers\App\Settings\AgentVoiceController;
 use App\Http\Controllers\App\Settings\BillingController;
 use App\Http\Controllers\App\Settings\BusinessProfileController;
 use App\Http\Controllers\App\Settings\EmailChannelController;
@@ -210,6 +211,13 @@ Route::middleware(['auth', 'verified', '2fa', 'tenant'])->group(function () {
         Route::put('agent/{agent}',          [AgentController::class, 'update'])->name('agent.update');
         Route::delete('agent/{agent}',       [AgentController::class, 'destroy'])->name('agent.destroy');
         Route::post('agent/{agent}/preview', [AgentController::class, 'preview'])->name('agent.preview');
+
+        // Voix : état de la connexion, catalogue, et écoute d'un échantillon.
+        // L'écoute est throttlée — chaque clic consomme le quota du compte.
+        Route::get('agent/{agent}/voice', [AgentVoiceController::class, 'index'])->name('agent.voice');
+        Route::post('agent/{agent}/voice/preview', [AgentVoiceController::class, 'preview'])
+            ->middleware('throttle:20,1')
+            ->name('agent.voice.preview');
 
         // Banc d'essai : un tour de conversation réel, sans rien enregistrer.
         // Throttlé comme un appel payant, parce que c'en est un.
