@@ -2,6 +2,8 @@
 import { ref, reactive, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import PageHeader from '@/Components/PageHeader.vue';
+import Icon from '@/Components/Icon.vue';
 
 const props = defineProps({
     conversations: Object,
@@ -581,127 +583,148 @@ const toggleTranscript = (id) => {
     <Head title="WhatsApp" />
 
     <AppLayout>
-        <div class="card p-0 flex overflow-hidden h-[calc(100vh-11rem)] min-h-[550px]">
-            
+        <PageHeader
+            title="Conversations"
+            description="La boîte de réception commune à WhatsApp, au widget web et à l'e-mail."
+            icon="chat"
+            tone="brand"
+        />
+
+        <div class="card-flush flex h-[calc(100vh-14rem)] min-h-[550px]">
+
             <!-- 1. VOLET GAUCHE : LISTE DES DISCUSSIONS -->
-            <div class="w-80 border-r border-slate-200 dark:border-slate-800 flex flex-col h-full shrink-0 bg-slate-50 dark:bg-slate-900/50">
-                
+            <div class="flex h-full w-80 shrink-0 flex-col border-r border-slate-200/70 bg-slate-50/60 dark:border-slate-800 dark:bg-slate-900/50">
+
                 <!-- Outils de Recherche et Filtres -->
-                <div class="p-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-2">
-                    <input
-                        v-model="filters.q"
-                        type="search"
-                        placeholder="Rechercher un contact…"
-                        class="input py-1.5 px-3"
-                        @input="applyFilters"
-                    />
-                    
-                    <div class="flex gap-2">
-                        <select v-model="filters.status" class="input py-1 px-2 text-xs" @change="applyFilters">
-                            <option value="">Tous les statuts</option>
-                            <option value="open">Ouvertes</option>
-                            <option value="pending">En attente</option>
-                            <option value="closed">Fermées</option>
-                        </select>
+                <div class="space-y-3 border-b border-slate-200/70 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+                    <div class="relative">
+                        <Icon name="search" size="sm" class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-slate-400" />
+                        <input
+                            v-model="filters.q"
+                            type="search"
+                            placeholder="Rechercher un contact…"
+                            class="input pl-9"
+                            @input="applyFilters"
+                        />
                     </div>
 
-                    <div class="flex flex-wrap gap-x-3 gap-y-1 pt-1">
-                        <label class="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400 cursor-pointer">
-                            <input 
-                                v-model="filters.mine" 
-                                type="checkbox" 
-                                @change="applyFilters" 
-                                class="rounded border-slate-300 dark:border-slate-700" 
+                    <select v-model="filters.status" class="input" @change="applyFilters">
+                        <option value="">Tous les statuts</option>
+                        <option value="open">Ouvertes</option>
+                        <option value="pending">En attente</option>
+                        <option value="closed">Fermées</option>
+                    </select>
+
+                    <div class="flex flex-wrap gap-x-4 gap-y-1.5">
+                        <label class="flex cursor-pointer items-center gap-2 text-sm text-slate-600 select-none dark:text-slate-400">
+                            <input
+                                v-model="filters.mine"
+                                type="checkbox"
+                                @change="applyFilters"
+                                class="rounded border-slate-300 dark:border-slate-700"
                             />
                             Les miennes
                         </label>
-                        <label class="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400 cursor-pointer">
-                            <input 
-                                v-model="filters.awaiting" 
-                                type="checkbox" 
-                                @change="applyFilters" 
-                                class="rounded border-slate-300 dark:border-slate-700" 
+                        <label class="flex cursor-pointer items-center gap-2 text-sm text-slate-600 select-none dark:text-slate-400">
+                            <input
+                                v-model="filters.awaiting"
+                                type="checkbox"
+                                @change="applyFilters"
+                                class="rounded border-slate-300 dark:border-slate-700"
                             />
                             Humain requis
                         </label>
                     </div>
 
                     <!-- Notification bureau inline toggle -->
-                    <div class="flex items-center justify-between border-t border-slate-100 dark:border-slate-800/60 pt-2.5 mt-1">
-                        <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Notifications Bureau</span>
-                        <button 
-                            @click="toggleNotifications" 
+                    <div class="flex items-center justify-between border-t border-slate-100 pt-3 dark:border-slate-800/60">
+                        <span class="eyebrow">Notifications bureau</span>
+                        <button
+                            @click="toggleNotifications"
                             type="button"
-                            class="flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[9.5px] font-bold transition duration-200 cursor-pointer border"
-                            :class="notificationState === 'granted' 
-                                ? 'bg-emerald-50 text-emerald-800 border-emerald-200/50 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/50' 
+                            class="flex cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold transition"
+                            :class="notificationState === 'granted'
+                                ? 'border-emerald-200/60 bg-emerald-50 text-emerald-800 dark:border-emerald-800/50 dark:bg-emerald-950/40 dark:text-emerald-300'
                                 : notificationState === 'denied'
-                                    ? 'bg-rose-50 text-rose-800 border-rose-200/50 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/50'
-                                    : 'bg-indigo-50 text-indigo-800 border-indigo-200/50 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800/50'"
+                                    ? 'border-rose-200/60 bg-rose-50 text-rose-800 dark:border-rose-800/50 dark:bg-rose-950/40 dark:text-rose-300'
+                                    : 'border-brand-200/60 bg-brand-50 text-brand-700 dark:border-slate-700 dark:bg-slate-800 dark:text-brand-100'"
                         >
-                            <span class="h-1.5 w-1.5 rounded-full" :class="notificationState === 'granted' ? 'bg-emerald-500' : notificationState === 'denied' ? 'bg-rose-500' : 'bg-indigo-500'" />
+                            <span class="h-1.5 w-1.5 rounded-full" :class="notificationState === 'granted' ? 'bg-emerald-500' : notificationState === 'denied' ? 'bg-rose-500' : 'bg-brand-500'" />
                             {{ notificationState === 'granted' ? 'Actives' : notificationState === 'denied' ? 'Bloquées' : 'Activer' }}
                         </button>
                     </div>
                 </div>
 
                 <!-- Liste dynamique -->
-                <div class="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/50">
+                <div class="flex-1 overflow-y-auto">
+                    <!--
+                      L'état sélectionné se marque par un liseré posé en absolu,
+                      et non par une `border-l-4` : celle-ci décalait le contenu
+                      de quatre pixels, si bien que toute la liste tressautait au
+                      changement de conversation.
+                    -->
                     <div
                         v-for="conv in conversations.data"
                         :key="conv.id"
                         @click="selectConversation(conv.id)"
-                        class="flex items-start gap-3.5 px-5 py-4 cursor-pointer transition-all duration-200 relative border-b border-slate-100/50 dark:border-slate-800/30 hover:bg-slate-50 dark:hover:bg-slate-800/20"
-                        :class="conversation?.id === conv.id ? 'bg-indigo-500/5 dark:bg-slate-800/50 border-l-4 border-indigo-600' : 'pl-6'"
+                        class="relative flex cursor-pointer items-start gap-3 border-b border-slate-100 px-4 py-3.5 transition dark:border-slate-800/40"
+                        :class="conversation?.id === conv.id
+                            ? 'bg-brand-50/70 dark:bg-slate-800/50'
+                            : 'hover:bg-slate-100/70 dark:hover:bg-slate-800/25'"
                     >
+                        <span
+                            v-if="conversation?.id === conv.id"
+                            class="absolute inset-y-0 left-0 w-1 bg-brand-600"
+                        />
+
                         <!-- Avatar avec initiale -->
-                        <div class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center font-bold text-slate-600 dark:text-slate-300 shrink-0 text-sm">
+                        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-200 text-sm font-semibold text-slate-600 dark:bg-slate-700 dark:text-slate-300">
                             {{ (conv.contact?.name || conv.contact?.profile_name || 'C')[0].toUpperCase() }}
                         </div>
-                        
+
                         <div class="min-w-0 flex-1">
-                            <div class="flex items-center justify-between">
-                                <p class="truncate font-semibold text-xs text-slate-900 dark:text-slate-100">
+                            <div class="flex items-baseline justify-between gap-2">
+                                <p class="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
                                     {{ conv.contact?.name || conv.contact?.profile_name || '+' + conv.contact?.wa_id }}
                                 </p>
-                                <span class="text-[9px] text-slate-400 shrink-0 whitespace-nowrap">
+                                <span class="shrink-0 text-[11px] whitespace-nowrap text-slate-400 tabular-nums">
                                     {{ relative(conv.last_message_at) }}
                                 </span>
                             </div>
-                            
+
                             <!-- Badges de statut et attribution -->
-                            <div class="flex items-center justify-between mt-2">
-                                <div class="flex gap-1 items-center">
+                            <div class="mt-1.5 flex items-center justify-between gap-2">
+                                <div class="flex min-w-0 items-center gap-1.5">
                                     <span
                                         v-if="conv.handover_at"
-                                        class="rounded-full bg-amber-100 dark:bg-amber-950/80 px-1.5 py-0.5 text-[9px] text-amber-800 dark:text-amber-300 font-medium"
+                                        class="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800 dark:bg-amber-950/80 dark:text-amber-300"
                                     >
                                         humain requis
                                     </span>
                                     <span
                                         v-else-if="conv.ai_enabled"
-                                        class="rounded-full bg-emerald-100 dark:bg-emerald-950/80 px-1.5 py-0.5 text-[9px] text-emerald-800 dark:text-emerald-300 font-medium"
+                                        class="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300"
                                     >
                                         IA active
                                     </span>
-                                    <span v-if="conv.assigned_user" class="text-[9px] text-slate-400 dark:text-slate-500">
+                                    <span v-if="conv.assigned_user" class="truncate text-[11px] text-slate-400 dark:text-slate-500">
                                         · {{ conv.assigned_user.name }}
                                     </span>
                                 </div>
-                                
+
                                 <!-- Badge de messages non lus -->
                                 <span
                                     v-if="conv.unread_count"
-                                    class="rounded-full bg-brand-600 px-1.5 py-0.5 text-[9px] font-bold text-white min-w-4 text-center shrink-0"
+                                    class="min-w-5 shrink-0 rounded-full bg-brand-600 px-1.5 py-0.5 text-center text-[11px] font-semibold text-white tabular-nums"
                                 >
                                     {{ conv.unread_count }}
                                 </span>
                             </div>
                         </div>
                     </div>
-                    
-                    <p v-if="!conversations.data.length" class="px-4 py-12 text-center text-xs text-slate-400 italic">
-                        Aucune discussion disponible.
+
+                    <p v-if="!conversations.data.length" class="px-4 py-12 text-center text-sm text-slate-400">
+                        Aucune discussion ne correspond à ces filtres.
                     </p>
                 </div>
             </div>
@@ -713,27 +736,28 @@ const toggleTranscript = (id) => {
                 <template v-if="conversation">
                   
                     <!-- En-tête active -->
-                    <div class="h-16 px-4 border-b border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900 flex items-center justify-between z-10 shrink-0 shadow-sm">
-                        <div class="flex items-center gap-3 min-w-0">
-                            <div class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center font-bold text-slate-600 dark:text-slate-300 text-sm shrink-0">
+                    <div class="z-10 flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-slate-200/70 bg-white px-4 py-3 dark:border-slate-800/80 dark:bg-slate-900">
+                        <div class="flex min-w-0 items-center gap-3">
+                            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-200 text-sm font-semibold text-slate-600 dark:bg-slate-700 dark:text-slate-300">
                                 {{ (conversation.contact?.name || conversation.contact?.profile_name || 'C')[0].toUpperCase() }}
                             </div>
                             <div class="min-w-0">
-                                <h2 class="font-semibold text-sm text-slate-900 dark:text-slate-100 truncate">
+                                <h2 class="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
                                     {{ conversation.contact?.name || conversation.contact?.profile_name || '+' + conversation.contact?.wa_id }}
                                 </h2>
-                                <p class="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                                <p class="truncate font-mono text-xs text-slate-500 dark:text-slate-400">
                                     +{{ conversation.contact?.wa_id }}
                                 </p>
                             </div>
                         </div>
-                        
-                        <div class="flex items-center gap-2">
+
+                        <div class="flex flex-wrap items-center gap-2">
                             <!-- Sélecteur de statut -->
-                            <select 
-                                class="input py-1 px-2 text-xs max-w-28 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 cursor-pointer"
+                            <select
+                                class="input w-auto cursor-pointer py-1.5 text-xs"
                                 :value="conversation.status"
                                 @change="changeStatus"
+                                aria-label="Statut de la conversation"
                             >
                                 <option value="open">Ouverte</option>
                                 <option value="pending">En attente</option>
@@ -741,45 +765,49 @@ const toggleTranscript = (id) => {
                             </select>
 
                             <!-- Attribué à -->
-                            <select 
-                                class="input py-1 px-2 text-xs max-w-32 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 cursor-pointer"
-                                :value="conversation.assigned_user_id ?? ''" 
+                            <select
+                                class="input w-auto cursor-pointer py-1.5 text-xs"
+                                :value="conversation.assigned_user_id ?? ''"
                                 @change="assign"
-                                title="Attribuer à un opérateur"
+                                aria-label="Attribuer à un opérateur"
                             >
                                 <option value="">Non attribuée</option>
                                 <option v-for="op in operators" :key="op.id" :value="op.id">{{ op.name }}</option>
                             </select>
 
                             <!-- Agent IA -->
-                            <select 
-                                class="input py-1 px-2 text-xs max-w-32 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 cursor-pointer"
-                                :value="conversation.agent_id ?? ''" 
+                            <select
+                                class="input w-auto cursor-pointer py-1.5 text-xs"
+                                :value="conversation.agent_id ?? ''"
                                 @change="changeAgent"
-                                title="Choisir l'agent IA"
+                                aria-label="Choisir l'agent IA"
                             >
                                 <option value="">Agent par défaut</option>
                                 <option v-for="ag in agents" :key="ag.id" :value="ag.id">{{ ag.name }}</option>
                             </select>
 
-                            <!-- Prise de main / Restauration IA -->
-                            <button 
-                                class="rounded-lg px-2.5 py-1.5 text-xs font-semibold border transition cursor-pointer"
-                                :class="conversation.ai_enabled 
+                            <!-- Prise de main / Restauration IA.
+                                 Garde sa couleur : ce n'est pas une action de
+                                 formulaire mais un basculement d'état, et
+                                 l'opérateur doit voir qui répond sans lire. -->
+                            <button
+                                class="cursor-pointer rounded-lg border px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition"
+                                :class="conversation.ai_enabled
                                   ? 'border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 dark:border-amber-700 dark:bg-amber-950/20 dark:text-amber-300'
                                   : 'border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 dark:border-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-300'"
                                 @click="toggleAi"
                             >
-                                {{ conversation.ai_enabled ? "Prendre la main" : "Réactiver l'IA" }}
+                                {{ conversation.ai_enabled ? 'Prendre la main' : "Réactiver l'IA" }}
                             </button>
-                            
+
                             <!-- Toggle Sidebar -->
-                            <button 
+                            <button
                                 @click="toggleSidebar"
-                                class="p-1.5 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition cursor-pointer"
-                                title="Détails"
+                                class="btn-ghost px-2"
+                                title="Détails du contact"
+                                aria-label="Détails du contact"
                             >
-                                <span class="text-sm">ℹ️</span>
+                                <Icon name="info" size="sm" />
                             </button>
                         </div>
                     </div>
@@ -920,32 +948,62 @@ const toggleTranscript = (id) => {
                     <!-- Barre de réponse et alertes templates -->
                     <div class="border-t border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900 p-3 shrink-0">
                         
-                        <!-- Hors fenêtre 24h -->
-                        <div v-if="!windowOpen" class="mb-3 rounded-lg bg-amber-50 dark:bg-amber-950/20 p-3 border border-amber-200 dark:border-amber-900/50">
-                            <p class="text-xs text-amber-800 dark:text-amber-300 font-semibold">
-                                ⚠️ Session fermée (plus de 24h). Sélectionnez un modèle approuvé pour répondre.
-                            </p>
-                            
+                        <!--
+                          Hors fenêtre de 24 h.
+
+                          Ce n'est pas une limite de Nonalix mais une règle Meta :
+                          passé 24 h sans message du contact, seul un modèle
+                          approuvé peut partir. Le bloc doit donc expliquer la
+                          cause ET donner la suite — sans quoi l'opérateur reste
+                          devant un champ grisé sans savoir quoi faire.
+                        -->
+                        <div v-if="!windowOpen" class="mb-3 rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/50 dark:bg-amber-950/20">
+                            <div class="flex items-start gap-2.5">
+                                <Icon name="clock" size="sm" class="mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
+                                <div class="min-w-0">
+                                    <p class="text-sm font-semibold text-amber-900 dark:text-amber-300">
+                                        Fenêtre de 24 h fermée
+                                    </p>
+                                    <p class="mt-1 text-xs leading-relaxed text-amber-800/90 dark:text-amber-300/80">
+                                        Meta interdit le message libre tant que le contact n'a pas réécrit.
+                                        Seul un modèle approuvé peut lui être envoyé.
+                                    </p>
+                                </div>
+                            </div>
+
                             <!-- Sélecteur de modèle -->
-                            <div class="mt-2" v-if="templates && templates.length">
-                                <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                                    Modèles approuvés :
-                                </span>
-                                <div class="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pt-1">
+                            <div class="mt-3" v-if="templates && templates.length">
+                                <span class="eyebrow">Modèles approuvés</span>
+                                <div class="mt-2 flex max-h-24 flex-wrap gap-1.5 overflow-y-auto">
                                     <button
                                         v-for="tpl in templates"
                                         :key="tpl.id"
                                         type="button"
-                                        class="px-2.5 py-1 text-xs border border-slate-200 hover:border-brand-500 hover:bg-brand-50 dark:border-slate-800 dark:hover:border-brand-500 dark:hover:bg-slate-800 rounded-md transition text-left font-medium cursor-pointer"
+                                        class="cursor-pointer rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-left text-xs font-medium transition hover:border-brand-500 hover:bg-brand-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-brand-500 dark:hover:bg-slate-800"
                                         @click="selectTemplate(tpl)"
                                     >
                                         {{ tpl.name }} ({{ tpl.language }})
                                     </button>
                                 </div>
                             </div>
-                            <p v-else class="text-xs text-slate-400 mt-1 italic">
-                                Aucun modèle approuvé n'est disponible.
-                            </p>
+
+                            <!--
+                              Aucun modèle : l'ancien message s'arrêtait à ce
+                              constat. Il indique désormais où en créer un, parce
+                              que c'est la seule action qui débloque la situation.
+                            -->
+                            <div v-else class="mt-3 rounded-lg border border-amber-200/70 bg-white/70 p-3 dark:border-amber-900/40 dark:bg-slate-900/40">
+                                <p class="text-xs font-medium text-slate-700 dark:text-slate-200">
+                                    Aucun modèle approuvé n'est encore disponible.
+                                </p>
+                                <p class="mt-1 text-xs leading-relaxed text-slate-500">
+                                    Les modèles se créent et se font approuver dans le WhatsApp Manager de Meta,
+                                    puis se récupèrent ici.
+                                </p>
+                                <Link href="/settings/whatsapp" class="btn-secondary mt-2.5 py-1.5 text-xs">
+                                    Synchroniser les modèles
+                                </Link>
+                            </div>
 
                             <!-- Édition et preview du template -->
                             <div v-if="selectedTemplate" class="mt-3 p-3 bg-slate-100 dark:bg-slate-800/40 rounded-lg border border-slate-200 dark:border-slate-700">
@@ -979,47 +1037,51 @@ const toggleTranscript = (id) => {
                         </div>
 
                         <!-- Formulaire de saisie -->
-                        <form class="flex gap-2 items-end" @submit.prevent="send">
+                        <form class="flex items-end gap-2" @submit.prevent="send">
                             <textarea
                                 v-model="form.body"
                                 rows="1"
-                                class="input flex-1 resize-none py-2 max-h-24 bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800"
+                                class="input max-h-24 flex-1 resize-none"
                                 :disabled="!windowOpen && !selectedTemplate"
                                 placeholder="Votre réponse… (Entrée pour envoyer)"
                                 @keydown.enter.exact.prevent="send"
                             />
-                            <button 
-                                type="submit" 
-                                class="btn-primary py-2 px-4 h-9 flex items-center justify-center text-xs shrink-0 cursor-pointer" 
+                            <button
+                                type="submit"
+                                class="btn-primary shrink-0"
                                 :disabled="form.processing || (!windowOpen && !selectedTemplate)"
                             >
                                 Envoyer
                             </button>
                         </form>
-                        <p v-if="form.errors.body" class="mt-1 text-xs text-red-500 font-semibold">{{ form.errors.body }}</p>
+                        <p v-if="form.errors.body" class="error">{{ form.errors.body }}</p>
                     </div>
                 </template>
-                
+
                 <!-- B. SI AUCUNE DISCUSSION ACTIVE -->
-                <div v-else class="flex-1 flex flex-col items-center justify-center text-center p-8 bg-slate-50 dark:bg-slate-900/10">
-                    <div class="w-16 h-16 rounded-full bg-brand-50 dark:bg-slate-800/80 flex items-center justify-center text-brand-600 dark:text-brand-400 mb-4 shadow-sm">
-                        <span class="text-3xl">💬</span>
-                    </div>
-                    <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100">Section WhatsApp</h2>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 max-w-sm mt-2 leading-relaxed">
-                        Sélectionnez un contact dans le volet de gauche pour accéder à la conversation, envoyer des réponses ou prendre la main manuellement.
+                <div v-else class="flex flex-1 flex-col items-center justify-center bg-slate-50 p-8 text-center dark:bg-slate-900/10">
+                    <span class="tile-brand mb-4 h-16 w-16">
+                        <Icon name="chat" size="lg" />
+                    </span>
+                    <h2 class="text-base font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+                        Aucune conversation sélectionnée
+                    </h2>
+                    <p class="mt-2 max-w-sm text-sm leading-relaxed text-slate-500 dark:text-slate-400">
+                        Choisissez un contact à gauche pour lire le fil, répondre, ou reprendre la main sur l'agent.
                     </p>
                 </div>
             </div>
-            
+
             <!-- 3. VOLET DROIT : DETAILS PROSPECT & NOTES INTERNES -->
-            <aside 
-                v-if="conversation && showSidebar" 
-                class="w-80 border-l border-slate-200 dark:border-slate-800 flex flex-col h-full bg-white dark:bg-slate-900 shrink-0"
+            <aside
+                v-if="conversation && showSidebar"
+                class="flex h-full w-80 shrink-0 flex-col border-l border-slate-200/70 bg-white dark:border-slate-800 dark:bg-slate-900"
             >
-                <div class="h-16 px-4 border-b border-slate-200 dark:border-slate-800/80 flex items-center justify-between shrink-0">
-                    <h3 class="font-semibold text-xs uppercase tracking-wider text-slate-800 dark:text-slate-200">Détails</h3>
-                    <button @click="showSidebar = false" class="text-[10px] font-bold text-slate-400 hover:text-slate-600 cursor-pointer">FERMER</button>
+                <div class="flex shrink-0 items-center justify-between border-b border-slate-200/70 px-4 py-3.5 dark:border-slate-800/80">
+                    <h3 class="section-title">Détails</h3>
+                    <button @click="showSidebar = false" class="btn-ghost px-2" aria-label="Fermer le panneau">
+                        <Icon name="close" size="sm" />
+                    </button>
                 </div>
                 
                 <div class="flex-1 overflow-y-auto p-4 space-y-5">

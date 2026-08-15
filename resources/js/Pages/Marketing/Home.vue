@@ -49,23 +49,26 @@ const guarantees = [
         <!-- Héros aligné à gauche et non centré : une colonne de texte se lit
              plus vite, et la promesse tient en une ligne. -->
         <section class="mx-auto max-w-5xl px-6 pt-24 pb-20 sm:pt-32">
-            <h1 class="max-w-3xl text-[2.75rem] font-semibold leading-[1.08] tracking-tight sm:text-6xl">
+            <h1
+                v-reveal
+                class="max-w-3xl text-[2.75rem] font-semibold leading-[1.08] tracking-tight sm:text-6xl"
+            >
                 Vos clients écrivent.<br />
                 L'agent répond.
             </h1>
 
-            <p class="mt-7 max-w-xl text-lg leading-relaxed text-slate-600">
+            <p v-reveal="80" class="mt-7 max-w-xl text-lg leading-relaxed text-slate-600">
                 Sur votre numéro WhatsApp habituel, jour et nuit, avec vos propres
                 informations. Et il passe la main à votre équipe dès que la demande
                 le mérite.
             </p>
 
-            <div class="mt-10 flex flex-wrap items-center gap-3">
+            <div v-reveal="160" class="mt-10 flex flex-wrap items-center gap-3">
                 <Link href="/demande" class="btn-ink px-6 py-3 text-base">Demander un accès</Link>
                 <Link href="/tarifs" class="btn-secondary px-6 py-3 text-base">Voir les tarifs</Link>
             </div>
 
-            <p class="mt-5 text-sm text-slate-500">
+            <p v-reveal="220" class="mt-5 text-sm text-slate-500">
                 14 jours d'essai · sans carte bancaire · à partir de 15 000 F CFA par mois
             </p>
         </section>
@@ -74,10 +77,10 @@ const guarantees = [
              l'espace qui structure la page, pas la bordure. -->
         <section class="bg-slate-50 py-24">
             <div class="mx-auto max-w-5xl px-6">
-                <h2 class="text-3xl font-semibold tracking-tight">Trois étapes, un après-midi</h2>
+                <h2 v-reveal class="text-3xl font-semibold tracking-tight">Trois étapes, un après-midi</h2>
 
                 <ol class="mt-14 grid gap-12 md:grid-cols-3">
-                    <li v-for="(step, index) in steps" :key="step.title">
+                    <li v-for="(step, index) in steps" :key="step.title" v-reveal="index * 100">
                         <span class="text-sm font-medium tabular-nums text-slate-400">
                             0{{ index + 1 }}
                         </span>
@@ -90,14 +93,14 @@ const guarantees = [
 
         <section class="py-24">
             <div class="mx-auto max-w-5xl px-6">
-                <h2 class="text-3xl font-semibold tracking-tight">Ce que nous garantissons</h2>
-                <p class="mt-4 max-w-xl leading-relaxed text-slate-600">
+                <h2 v-reveal class="text-3xl font-semibold tracking-tight">Ce que nous garantissons</h2>
+                <p v-reveal="80" class="mt-4 max-w-xl leading-relaxed text-slate-600">
                     Un agent qui parle à vos clients engage votre réputation. Voici les
                     garde-fous que nous avons mis en place.
                 </p>
 
                 <div class="mt-14 grid gap-x-12 gap-y-10 md:grid-cols-2">
-                    <div v-for="item in guarantees" :key="item.title">
+                    <div v-for="(item, index) in guarantees" :key="item.title" v-reveal="index * 80">
                         <h3 class="text-lg font-medium">{{ item.title }}</h3>
                         <p class="mt-2.5 leading-relaxed text-slate-600">{{ item.text }}</p>
                     </div>
@@ -106,7 +109,7 @@ const guarantees = [
         </section>
 
         <section class="mx-auto max-w-5xl px-6 pb-8">
-            <div class="rounded-3xl bg-slate-900 px-8 py-16 text-center sm:px-16">
+            <div v-reveal class="rounded-3xl bg-slate-900 px-8 py-16 text-center transition duration-300 hover:shadow-lift sm:px-16">
                 <h2 class="text-3xl font-semibold tracking-tight text-white">
                     Essayez sur votre propre numéro
                 </h2>
@@ -116,7 +119,7 @@ const guarantees = [
                 </p>
                 <Link
                     href="/demande"
-                    class="btn mt-9 bg-white px-6 py-3 text-base text-slate-900 hover:bg-slate-100"
+                    class="btn mt-9 bg-white px-6 py-3 text-base text-slate-900 transition hover:scale-[1.03] hover:bg-slate-100"
                 >
                     Demander un accès
                 </Link>

@@ -2,6 +2,7 @@ import { createApp, h } from 'vue';
 import { createInertiaApp } from '@inertiajs/vue3';
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
+import vReveal from '@/directives/reveal';
 
 /*
  * Temps réel (Reverb).
@@ -42,6 +43,7 @@ createInertiaApp({
     setup({ el, App, props, plugin }) {
         createApp({ render: () => h(App, props) })
             .use(plugin)
+            .directive('reveal', vReveal)
             .mount(el);
     },
 

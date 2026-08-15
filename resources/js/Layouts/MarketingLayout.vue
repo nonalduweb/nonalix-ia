@@ -27,10 +27,10 @@ const year = new Date().getFullYear();
                 </Link>
 
                 <nav class="flex items-center gap-7 text-[15px]">
-                    <Link href="/tarifs" class="text-slate-600 transition hover:text-slate-900">
+                    <Link href="/tarifs" class="nav-link">
                         Tarifs
                     </Link>
-                    <a :href="appUrl" class="hidden text-slate-600 transition hover:text-slate-900 sm:block">
+                    <a :href="appUrl" class="nav-link hidden sm:block">
                         Se connecter
                     </a>
                     <Link href="/demande" class="btn-ink">Demander un accès</Link>

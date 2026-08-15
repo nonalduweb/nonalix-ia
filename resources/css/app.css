@@ -259,6 +259,53 @@
         @apply rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600
                dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300;
     }
+
+    /* ── Apparition au scroll (v-reveal) ─────────────────────────────────────
+       Fondu + léger décalage, jamais de couleur ni de rebond : l'animation
+       signale que le contenu arrive, elle ne doit pas se faire remarquer
+       elle-même — voir les règles en tête de fichier. */
+    .reveal {
+        opacity: 0;
+        transform: translateY(0.75rem);
+        transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+    }
+
+    .reveal.is-revealed {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    /* Lien de navigation du site commercial : le trait souligné se tire au
+       survol plutôt que d'apparaître d'un coup — la même logique que
+       l'apparition des sections, appliquée à un micro-geste. */
+    .nav-link {
+        @apply relative text-slate-600 transition hover:text-slate-900;
+    }
+
+    .nav-link::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: -4px;
+        height: 1px;
+        background: currentColor;
+        transform: scaleX(0);
+        transform-origin: right;
+        transition: transform 0.3s ease;
+    }
+
+    .nav-link:hover::after,
+    .nav-link:focus-visible::after {
+        transform: scaleX(1);
+        transform-origin: left;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .reveal {
+        transition: none;
+    }
 }
 
 /*
