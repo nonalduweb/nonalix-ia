@@ -3,6 +3,8 @@ import { computed, ref } from 'vue';
 import { Head, router, useForm, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import SettingsNav from '@/Components/SettingsNav.vue';
+import PageHeader from '@/Components/PageHeader.vue';
+import Icon from '@/Components/Icon.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import Modal from '@/Components/Modal.vue';
 
@@ -86,65 +88,65 @@ const formatDateTime = (iso) => (iso ? new Date(iso).toLocaleString('fr-FR') : '
     <Head title="Utilisateurs" />
 
     <AppLayout>
-        <h1 class="mb-6 text-xl font-semibold">Configuration</h1>
+        <PageHeader
+            title="Utilisateurs"
+            description="Les personnes qui accèdent à cet espace, et ce que chacune a le droit d'y faire."
+            icon="users"
+            tone="brand"
+        >
+            <template #actions>
+                <button class="btn-primary" @click="inviting = true">Inviter</button>
+            </template>
+        </PageHeader>
+
         <SettingsNav />
 
-        <div class="mb-4 flex items-start justify-between gap-4">
-            <p class="max-w-2xl text-sm text-slate-500">
-                Les membres de votre équipe. Les rôles n'ont d'effet qu'à l'intérieur de
-                votre entreprise.
-            </p>
-            <button class="btn-primary shrink-0" @click="inviting = true">Inviter</button>
-        </div>
-
-        <div class="card overflow-hidden p-0">
-            <table class="w-full text-sm">
-                <thead class="border-b border-slate-100 text-left text-xs uppercase tracking-wide text-slate-500 dark:border-slate-800">
+        <div class="card-flush mt-5">
+            <table class="w-full">
+                <thead class="table-head">
                     <tr>
-                        <th class="px-5 py-3 font-medium">Utilisateur</th>
-                        <th class="px-5 py-3 font-medium">Rôle</th>
-                        <th class="px-5 py-3 font-medium">2FA</th>
-                        <th class="px-5 py-3 font-medium">Dernière connexion</th>
-                        <th class="px-5 py-3 font-medium">État</th>
-                        <th class="px-5 py-3" />
+                        <th class="th">Utilisateur</th>
+                        <th class="th">Rôle</th>
+                        <th class="th">2FA</th>
+                        <th class="th">Dernière connexion</th>
+                        <th class="th">État</th>
+                        <th class="th" />
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-                    <tr v-for="user in users" :key="user.id">
-                        <td class="px-5 py-3">
-                            <p class="font-medium">
+                <tbody>
+                    <tr v-for="user in users" :key="user.id" class="table-row">
+                        <td class="td">
+                            <p class="font-medium text-slate-900 dark:text-white">
                                 {{ user.name }}
                                 <span v-if="user.id === currentUser?.id" class="ml-1 text-xs text-slate-400">(vous)</span>
                             </p>
                             <p class="text-xs text-slate-500">{{ user.email }}</p>
                         </td>
-                        <td class="px-5 py-3">
+                        <td class="td whitespace-nowrap">
                             {{ ROLE_LABELS[user.roles[0]] ?? user.roles[0] ?? '—' }}
                         </td>
-                        <td class="px-5 py-3">
-                            <span v-if="user.two_factor" class="text-emerald-600">✓</span>
+                        <td class="td">
+                            <Icon v-if="user.two_factor" name="checkCircle" size="sm" class="text-emerald-600" />
                             <!-- Un compte à privilèges sans 2FA est le point de
                                  compromission le plus direct d'un tenant. -->
                             <span
                                 v-else-if="['owner', 'admin'].includes(user.roles[0])"
-                                class="text-xs text-amber-600"
+                                class="text-xs whitespace-nowrap text-amber-600"
                                 title="Obligatoire pour ce rôle"
                             >
                                 à activer
                             </span>
                             <span v-else class="text-slate-400">—</span>
                         </td>
-                        <td class="px-5 py-3 text-slate-500">{{ formatDateTime(user.last_login_at) }}</td>
-                        <td class="px-5 py-3">
+                        <td class="td whitespace-nowrap text-slate-500 tabular-nums">{{ formatDateTime(user.last_login_at) }}</td>
+                        <td class="td">
                             <StatusBadge :status="user.status" :label="STATUS_LABELS[user.status]" />
                         </td>
-                        <td class="px-5 py-3 text-right whitespace-nowrap">
-                            <button class="text-xs text-slate-500 hover:underline" @click="openEdit(user)">
-                                Modifier
-                            </button>
+                        <td class="td text-right whitespace-nowrap">
+                            <button class="btn-ghost text-xs" @click="openEdit(user)">Modifier</button>
                             <button
                                 v-if="user.id !== currentUser?.id"
-                                class="ml-3 text-xs text-red-600 hover:underline"
+                                class="btn-ghost text-xs text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/40"
                                 @click="deleting = user"
                             >
                                 Retirer

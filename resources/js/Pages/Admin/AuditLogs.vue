@@ -2,6 +2,7 @@
 import { reactive, ref, watch } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
+import PageHeader from '@/Components/PageHeader.vue';
 import Pagination from '@/Components/Pagination.vue';
 import Modal from '@/Components/Modal.vue';
 
@@ -45,14 +46,14 @@ const formatDateTime = (iso) => (iso ? new Date(iso).toLocaleString('fr-FR') : '
     <Head title="Journal d'audit" />
 
     <AdminLayout>
-        <div class="mb-6">
-            <h1 class="text-xl font-semibold">Journal d'audit</h1>
-            <!-- Table insert-only : aucune route de modification ni de
-                 suppression n'existe, y compris pour un super-admin. -->
-            <p class="mt-1 text-sm text-slate-500">
-                Insert-only. Ces entrées ne peuvent être ni modifiées ni supprimées.
-            </p>
-        </div>
+        <!-- Table insert-only : aucune route de modification ni de
+             suppression n'existe, y compris pour un super-admin. -->
+        <PageHeader
+            title="Journal d'audit"
+            description="Insert-only. Ces entrées ne peuvent être ni modifiées ni supprimées."
+            icon="document"
+            tone="slate"
+        />
 
         <div class="card mb-4 flex flex-wrap gap-3">
             <input v-model="filters.action" type="search" placeholder="Action (ex. whatsapp.)" class="input max-w-xs" />

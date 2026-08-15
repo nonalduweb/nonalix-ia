@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
+import PageHeader from '@/Components/PageHeader.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import Modal from '@/Components/Modal.vue';
 
@@ -69,32 +70,29 @@ const formatDateTime = (iso) => (iso ? new Date(iso).toLocaleString('fr-FR') : '
             ← Entreprises
         </Link>
 
-        <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
-            <div>
-                <h1 class="text-xl font-semibold">{{ tenant.name }}</h1>
-                <p class="text-sm text-slate-500">
-                    {{ tenant.slug }} · créée le {{ formatDateTime(tenant.created_at) }}
-                </p>
-            </div>
-
-            <div class="flex items-center gap-3">
+        <PageHeader
+            :title="tenant.name"
+            :description="`${tenant.slug} · créée le ${formatDateTime(tenant.created_at)}`"
+            icon="users"
+            tone="brand"
+        >
+            <template #actions>
                 <StatusBadge :status="tenant.status" />
-                <button class="btn-secondary text-sm" @click="impersonating = true">
-                    Assistance
-                </button>
-                <button class="btn-secondary text-sm" @click="resendInvitation">
-                    Renvoyer l'invitation
-                </button>
+                <button class="btn-secondary" @click="impersonating = true">Assistance</button>
+                <button class="btn-secondary" @click="resendInvitation">Renvoyer l'invitation</button>
+                <!-- Suspendre reste en bouton secondaire malgré sa portée : il
+                     est encadré par une confirmation, et un bouton rouge plein
+                     dans un en-tête attire le clic qu'on cherche à éviter. -->
                 <button
                     v-if="tenant.status !== 'suspended'"
-                    class="btn-secondary text-sm text-red-600"
+                    class="btn-secondary text-red-600"
                     @click="suspending = true"
                 >
                     Suspendre
                 </button>
-                <button v-else class="btn-primary text-sm" @click="reactivate">Réactiver</button>
-            </div>
-        </div>
+                <button v-else class="btn-primary" @click="reactivate">Réactiver</button>
+            </template>
+        </PageHeader>
 
         <div
             v-if="tenant.suspension_reason"

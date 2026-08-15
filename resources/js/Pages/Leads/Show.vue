@@ -1,6 +1,7 @@
 <script setup>
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import PageHeader from '@/Components/PageHeader.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 
 const props = defineProps({
@@ -43,17 +44,16 @@ const formatDateTime = (iso) => (iso ? new Date(iso).toLocaleString('fr-FR') : '
             ← Prospects
         </Link>
 
-        <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
-            <div>
-                <h1 class="text-xl font-semibold">
-                    {{ lead.contact?.name || lead.contact?.profile_name || '+' + lead.contact?.wa_id }}
-                </h1>
-                <p class="text-sm text-slate-500">
-                    Créé le {{ formatDateTime(lead.created_at) }} · source {{ lead.source }}
-                </p>
-            </div>
-            <StatusBadge :status="lead.status" />
-        </div>
+        <PageHeader
+            :title="lead.contact?.name || lead.contact?.profile_name || '+' + lead.contact?.wa_id"
+            :description="`Créé le ${formatDateTime(lead.created_at)} · source ${lead.source}`"
+            icon="target"
+            tone="emerald"
+        >
+            <template #actions>
+                <StatusBadge :status="lead.status" />
+            </template>
+        </PageHeader>
 
         <div class="grid gap-6 lg:grid-cols-3">
             <div class="space-y-6 lg:col-span-2">

@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import SettingsNav from '@/Components/SettingsNav.vue';
+import PageHeader from '@/Components/PageHeader.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 
 const props = defineProps({
@@ -46,7 +47,13 @@ const formatDateTime = (iso) => (iso ? new Date(iso).toLocaleString('fr-FR') : '
     <Head title="WhatsApp" />
 
     <AppLayout>
-        <h1 class="mb-6 text-xl font-semibold">Configuration</h1>
+        <PageHeader
+            title="WhatsApp"
+            description="La connexion à votre numéro professionnel Meta, et l'état de sa fenêtre de service."
+            icon="phone"
+            tone="emerald"
+        />
+
         <SettingsNav />
 
         <div class="grid gap-6 lg:grid-cols-3">

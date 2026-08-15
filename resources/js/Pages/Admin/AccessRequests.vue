@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
+import PageHeader from '@/Components/PageHeader.vue';
 import Modal from '@/Components/Modal.vue';
 
 const props = defineProps({
@@ -54,13 +55,12 @@ const formatDate = (iso) =>
     <Head title="Demandes d'accès" />
 
     <AdminLayout>
-        <div class="mb-6">
-            <h1 class="text-xl font-semibold">Demandes d'accès</h1>
-            <p class="mt-1 text-sm text-slate-500">
-                Déposées depuis le site commercial. Approuver génère un code et
-                l'envoie automatiquement au prospect.
-            </p>
-        </div>
+        <PageHeader
+            title="Demandes d'accès"
+            description="Déposées depuis le site commercial. Approuver génère un code et l'envoie automatiquement au prospect."
+            icon="inbox"
+            tone="amber"
+        />
 
         <div v-if="!requests.length" class="card text-sm text-slate-500">
             Aucune demande pour l'instant. Le formulaire est en ligne sur

@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import SettingsNav from '@/Components/SettingsNav.vue';
+import PageHeader from '@/Components/PageHeader.vue';
 
 const props = defineProps({
     profile: { type: Object, default: null },
@@ -123,7 +124,13 @@ const saveHours = () => {
     <Head title="Entreprise" />
 
     <AppLayout>
-        <h1 class="mb-6 text-xl font-semibold">Configuration</h1>
+        <PageHeader
+            title="Entreprise"
+            description="Les informations que l'agent cite quand un client demande vos horaires, votre adresse ou votre secteur."
+            icon="cog"
+            tone="brand"
+        />
+
         <SettingsNav />
 
         <div class="grid gap-6 lg:grid-cols-2">

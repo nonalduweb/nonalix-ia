@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
+import PageHeader from '@/Components/PageHeader.vue';
 
 defineProps({
     providers: Array,
@@ -45,14 +46,12 @@ const effacer = (provider) => {
     <Head title="Clés IA" />
 
     <AdminLayout>
-        <div class="mb-6">
-            <h1 class="text-xl font-semibold">Clés IA de la plateforme</h1>
-            <p class="mt-1 max-w-3xl text-sm text-slate-500">
-                Socle utilisé par toutes les entreprises qui n'ont pas fourni la leur.
-                Une entreprise qui saisit sa propre clé dans ses réglages d'agent
-                consomme son quota et prime sur celle-ci.
-            </p>
-        </div>
+        <PageHeader
+            title="Clés IA de la plateforme"
+            description="Socle utilisé par toutes les entreprises qui n'ont pas fourni la leur. Une entreprise qui saisit sa propre clé dans ses réglages d'agent consomme son quota et prime sur celle-ci."
+            icon="sparkles"
+            tone="violet"
+        />
 
         <div class="mb-6 card text-sm">
             <dl class="grid gap-3 sm:grid-cols-3">

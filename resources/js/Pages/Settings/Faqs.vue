@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import SettingsNav from '@/Components/SettingsNav.vue';
+import PageHeader from '@/Components/PageHeader.vue';
 import Modal from '@/Components/Modal.vue';
 import EmptyState from '@/Components/EmptyState.vue';
 
@@ -54,19 +55,28 @@ const remove = () =>
     <Head title="Questions fréquentes" />
 
     <AppLayout>
-        <h1 class="mb-6 text-xl font-semibold">Configuration</h1>
+        <PageHeader
+            title="Questions fréquentes"
+            description="Les réponses toutes faites que l'agent réutilise mot pour mot, sans les reformuler."
+            icon="book"
+            tone="violet"
+        >
+            <template #actions>
+                <button class="btn-primary" @click="openCreate">Ajouter</button>
+            </template>
+        </PageHeader>
+
         <SettingsNav />
 
-        <div class="mb-4 flex items-start justify-between gap-4">
-            <p class="max-w-2xl text-sm text-slate-500">
-                Les questions fréquentes sont injectées intégralement dans le contexte de
-                l'agent. Privilégiez des réponses courtes et factuelles : chaque réponse
-                pèse sur le coût de <em>chaque</em> conversation.
-            </p>
-            <button class="btn-primary shrink-0" @click="openCreate">Ajouter</button>
-        </div>
+        <!-- Avertissement conservé à part de la description : c'est une
+             conséquence financière, pas une explication de l'écran. -->
+        <p class="alert-info mt-5">
+            Les questions fréquentes sont injectées intégralement dans le contexte de l'agent.
+            Privilégiez des réponses courtes et factuelles : chaque réponse pèse sur le coût de
+            <em>chaque</em> conversation.
+        </p>
 
-        <div class="card divide-y divide-slate-100 p-0 dark:divide-slate-800">
+        <div class="card-flush mt-5 divide-y divide-slate-100 dark:divide-slate-800">
             <div v-for="faq in faqs" :key="faq.id" class="flex items-start gap-4 px-5 py-4">
                 <div class="min-w-0 flex-1">
                     <p class="font-medium">{{ faq.question }}</p>

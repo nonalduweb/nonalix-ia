@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
+import PageHeader from '@/Components/PageHeader.vue';
 import Modal from '@/Components/Modal.vue';
 import { formatPlanPrice, toMajor, toMinor } from '@/money';
 
@@ -81,10 +82,16 @@ const formatPrice = (plan) => formatPlanPrice(plan);
     <Head title="Plans" />
 
     <AdminLayout>
-        <div class="mb-6 flex items-center justify-between">
-            <h1 class="text-xl font-semibold">Plans</h1>
-            <button class="btn-primary" @click="openCreate">Créer un plan</button>
-        </div>
+        <PageHeader
+            title="Plans"
+            description="Le catalogue commercial : tarifs, quotas et fonctionnalités de chaque formule."
+            icon="money"
+            tone="amber"
+        >
+            <template #actions>
+                <button class="btn-primary" @click="openCreate">Créer un plan</button>
+            </template>
+        </PageHeader>
 
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <div v-for="plan in plans" :key="plan.id" class="card flex flex-col">

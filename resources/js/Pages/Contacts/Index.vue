@@ -5,6 +5,8 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import Pagination from '@/Components/Pagination.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import EmptyState from '@/Components/EmptyState.vue';
+import PageHeader from '@/Components/PageHeader.vue';
+import Icon from '@/Components/Icon.vue';
 
 const props = defineProps({
     contacts: Object,
@@ -44,19 +46,31 @@ const formatDate = (iso) =>
     <Head title="Contacts" />
 
     <AppLayout>
-        <div class="mb-6 flex items-center justify-between">
-            <h1 class="text-xl font-semibold">Contacts</h1>
-            <p class="text-sm text-slate-500">{{ contacts.total }} au total</p>
-        </div>
+        <PageHeader
+            title="Contacts"
+            description="Toutes les personnes qui ont écrit à votre entreprise, tous canaux confondus."
+            icon="users"
+            tone="brand"
+        >
+            <template #meta>
+                <p class="mt-2 text-sm text-slate-500 tabular-nums">{{ contacts.total }} au total</p>
+            </template>
+        </PageHeader>
 
-        <div class="card mb-4 flex flex-wrap gap-3">
-            <input
-                v-model="filters.q"
-                type="search"
-                placeholder="Nom ou numéro…"
-                class="input max-w-xs"
-            />
-            <select v-model="filters.status" class="input max-w-48">
+        <div class="card mb-5 flex flex-wrap gap-3">
+            <!-- L'icône est posée dans le champ plutôt qu'à côté : un champ de
+                 recherche doit s'identifier avant d'être lu. -->
+            <div class="relative max-w-xs flex-1">
+                <Icon name="search" size="sm" class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-slate-400" />
+                <input
+                    v-model="filters.q"
+                    type="search"
+                    placeholder="Nom ou numéro…"
+                    class="input pl-9"
+                />
+            </div>
+
+            <select v-model="filters.status" class="input max-w-52">
                 <option value="">Tous les consentements</option>
                 <option value="opted_in">Abonnés</option>
                 <option value="opted_out">Désabonnés</option>
@@ -64,41 +78,47 @@ const formatDate = (iso) =>
             </select>
         </div>
 
-        <div class="card overflow-hidden p-0">
-            <table v-if="contacts.data.length" class="w-full text-sm">
-                <thead class="border-b border-slate-100 text-left text-xs uppercase tracking-wide text-slate-500 dark:border-slate-800">
-                    <tr>
-                        <th class="px-5 py-3 font-medium">Contact</th>
-                        <th class="px-5 py-3 font-medium">Numéro</th>
-                        <th class="px-5 py-3 font-medium">Consentement</th>
-                        <th class="px-5 py-3 font-medium">Dernier message</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-                    <tr
-                        v-for="contact in contacts.data"
-                        :key="contact.id"
-                        class="transition hover:bg-slate-50 dark:hover:bg-slate-800"
-                    >
-                        <td class="px-5 py-3">
-                            <Link :href="`/contacts/${contact.id}`" class="font-medium hover:underline">
-                                {{ contact.name || contact.profile_name || 'Sans nom' }}
-                            </Link>
-                        </td>
-                        <td class="px-5 py-3 font-mono text-xs text-slate-500">+{{ contact.wa_id }}</td>
-                        <td class="px-5 py-3">
-                            <StatusBadge
-                                :status="contact.opt_in_status"
-                                :label="OPT_IN_LABELS[contact.opt_in_status]"
-                            />
-                        </td>
-                        <td class="px-5 py-3 text-slate-500">{{ formatDate(contact.last_message_at) }}</td>
-                    </tr>
-                </tbody>
-            </table>
+        <div class="card-flush">
+            <!-- Le tableau déborde horizontalement plutôt que de comprimer ses
+                 colonnes : un numéro coupé sur téléphone n'est plus un numéro. -->
+            <div v-if="contacts.data.length" class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="table-head">
+                        <tr>
+                            <th class="th">Contact</th>
+                            <th class="th">Numéro</th>
+                            <th class="th">Consentement</th>
+                            <th class="th">Dernier message</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="contact in contacts.data" :key="contact.id" class="table-row">
+                            <td class="td">
+                                <Link
+                                    :href="`/contacts/${contact.id}`"
+                                    class="font-medium text-slate-900 hover:underline dark:text-white"
+                                >
+                                    {{ contact.name || contact.profile_name || 'Sans nom' }}
+                                </Link>
+                            </td>
+                            <td class="td font-mono text-xs whitespace-nowrap text-slate-500">+{{ contact.wa_id }}</td>
+                            <td class="td">
+                                <StatusBadge
+                                    :status="contact.opt_in_status"
+                                    :label="OPT_IN_LABELS[contact.opt_in_status]"
+                                />
+                            </td>
+                            <td class="td whitespace-nowrap text-slate-500 tabular-nums">
+                                {{ formatDate(contact.last_message_at) }}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
 
             <EmptyState
                 v-else
+                icon="users"
                 title="Aucun contact"
                 description="Les contacts sont créés automatiquement à la réception du premier message WhatsApp."
             />

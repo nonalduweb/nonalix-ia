@@ -1,6 +1,7 @@
 <script setup>
 import { Head, Link } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
+import PageHeader from '@/Components/PageHeader.vue';
 import { formatMoney, formatPlanPrice } from '@/money';
 
 const props = defineProps({
@@ -25,10 +26,7 @@ const FEATURE_LABELS = {
             ← Plans
         </Link>
 
-        <div class="mb-6">
-            <h1 class="text-xl font-semibold">{{ plan.name }}</h1>
-            <p class="text-sm text-slate-500">{{ plan.slug }}</p>
-        </div>
+        <PageHeader :title="plan.name" :description="plan.slug" icon="money" tone="amber" />
 
         <div class="grid gap-6 lg:grid-cols-3">
             <div class="card">

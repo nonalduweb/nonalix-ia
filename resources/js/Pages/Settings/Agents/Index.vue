@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import SettingsNav from '@/Components/SettingsNav.vue';
+import PageHeader from '@/Components/PageHeader.vue';
 
 const props = defineProps({
     agents: Array,
@@ -40,7 +41,13 @@ const install = (key, title) => {
     <Head title="Configuration Agents IA" />
 
     <AppLayout>
-        <h1 class="mb-6 text-xl font-semibold">Configuration</h1>
+        <PageHeader
+            title="Agents IA"
+            description="Les agents qui répondent à vos clients. Un seul est actif à la fois par canal."
+            icon="sparkles"
+            tone="violet"
+        />
+
         <SettingsNav />
 
         <!-- Galerie de métiers : premier écran tant qu'aucun agent n'est actif -->

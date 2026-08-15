@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
+import PageHeader from '@/Components/PageHeader.vue';
 
 const props = defineProps({
     period: String,
@@ -39,18 +40,18 @@ const tenantRows = computed(() =>
     <Head title="Consommation" />
 
     <AdminLayout>
-        <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
-            <div>
-                <h1 class="text-xl font-semibold">Consommation</h1>
-                <p class="text-sm text-slate-500">
-                    Compteurs consolidés depuis Redis toutes les quinze minutes.
-                </p>
-            </div>
-
-            <select class="input max-w-40" :value="period" @change="changePeriod">
-                <option v-for="p in periods" :key="p" :value="p">{{ p }}</option>
-            </select>
-        </div>
+        <PageHeader
+            title="Consommation"
+            description="Compteurs consolidés depuis Redis toutes les quinze minutes."
+            icon="trending"
+            tone="violet"
+        >
+            <template #actions>
+                <select class="input max-w-40" :value="period" @change="changePeriod">
+                    <option v-for="p in periods" :key="p" :value="p">{{ p }}</option>
+                </select>
+            </template>
+        </PageHeader>
 
         <section class="card mb-6 p-0">
             <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4 dark:border-slate-800">

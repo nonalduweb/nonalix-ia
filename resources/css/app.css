@@ -2,10 +2,30 @@
 
 /* Tailwind 4 : la configuration vit dans le CSS, plus dans tailwind.config.js */
 
+/*
+ * PRINCIPE VISUEL
+ * ───────────────
+ * Trois règles, dont découle tout le reste. Elles sont écrites ici parce que
+ * c'est le seul endroit que tout le monde traverse avant d'ajouter une page.
+ *
+ * 1. L'encre porte l'action.   Un bouton d'action est quasi-noir, jamais
+ *    coloré. C'est le parti pris de la page de connexion, étendu à
+ *    l'ensemble : sur un fond clair, le contraste suffit à désigner l'action,
+ *    et l'attention n'est pas disputée par une couleur vive.
+ *
+ * 2. La couleur porte le sens.  Bleu de marque = l'endroit où vous êtes
+ *    (navigation, progression). Vert/ambre/rouge = un état. Les teintes des
+ *    tuiles d'icônes = une catégorie. Une couleur qui ne dit rien n'a rien à
+ *    faire à l'écran.
+ *
+ * 3. L'air sépare, pas le trait.  On agrandit les marges avant d'ajouter une
+ *    bordure. Les traits restants sont ténus, les ombres à peine perceptibles.
+ */
+
 @theme {
     --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 
-    /* Palette Nonalix */
+    /* Palette Nonalix — réservée à l'état « vous êtes ici » et à la progression. */
     --color-brand-50:  oklch(0.97 0.02 250);
     --color-brand-100: oklch(0.93 0.05 250);
     --color-brand-500: oklch(0.62 0.19 255);
@@ -18,6 +38,17 @@
     --color-status-delivered: oklch(0.68 0.14 210);
     --color-status-read:      oklch(0.63 0.17 155);
     --color-status-failed:    oklch(0.60 0.20 25);
+
+    /*
+     * Ombres de surface.
+     *
+     * Volontairement à la limite du visible : elles servent à décoller une
+     * carte de son fond, pas à la faire flotter. Une ombre franche sur une
+     * grille de douze cartes produit un damier, et l'œil ne trouve plus la
+     * hiérarchie.
+     */
+    --shadow-card:  0 1px 2px oklch(0 0 0 / 0.04), 0 1px 3px oklch(0 0 0 / 0.05);
+    --shadow-lift:  0 2px 4px oklch(0 0 0 / 0.04), 0 8px 20px oklch(0 0 0 / 0.07);
 }
 
 @layer base {
@@ -26,6 +57,16 @@
     :root {
         color-scheme: light dark;
     }
+
+    /*
+     * Le fond de l'application (slate-50 clair / slate-950 sombre) est posé
+     * sur <body> dans app.blade.php, et non ici : il doit être peint avant le
+     * premier rendu de Vue, sans quoi un éclair blanc traverse l'écran au
+     * chargement en thème sombre.
+     *
+     * Ce fond très légèrement teinté est ce qui permet aux cartes blanches de
+     * se détacher d'elles-mêmes, et donc de garder des bordures ténues.
+     */
 
     [x-cloak] {
         display: none !important;
@@ -38,35 +79,60 @@
  * composant. C'est ce qui permet à .btn-primary de réutiliser cette base.
  */
 @utility btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2
-           text-sm font-medium transition focus:outline-none
-           focus-visible:ring-2 focus-visible:ring-offset-2
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg
+           px-4 py-2.5 text-sm font-medium transition
+           focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
            disabled:cursor-not-allowed disabled:opacity-50;
 }
 
+/* Tuile d'icône : le carré coloré qui précède un intitulé. La couleur y code
+   une catégorie, jamais une décoration — voir la règle 2. */
+@utility tile {
+    @apply flex h-10 w-10 shrink-0 items-center justify-center rounded-xl;
+}
+
 @layer components {
+    /*
+     * Bouton d'action, quasi-noir plutôt que coloré : voir la règle 1 en tête
+     * de fichier. `btn-ink` est le nom employé par le site commercial,
+     * `btn-primary` celui de l'application — même apparence, deux vocabulaires
+     * hérités.
+     *
+     * Un seul jeu de déclarations pour les deux sélecteurs, plutôt qu'un
+     * `.btn-primary { @apply btn-ink }` : ce dernier n'est possible que si
+     * `btn-ink` est déclaré en @utility, puisque @apply ne sait pas référencer
+     * une classe de @layer components (voir la note sur `btn` ci-dessus). Le
+     * sélecteur groupé évite d'avoir à choisir, et garde une seule définition
+     * à maintenir.
+     */
+    .btn-ink,
     .btn-primary {
-        @apply btn bg-brand-600 text-white hover:bg-brand-700
-               focus-visible:ring-brand-500;
+        @apply btn bg-slate-900 text-white hover:bg-slate-800
+               focus-visible:ring-slate-900
+               dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200
+               dark:focus-visible:ring-white;
     }
 
     .btn-secondary {
-        @apply btn border border-slate-300 bg-white text-slate-700
-               hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900
+        @apply btn border border-slate-200 bg-white text-slate-700
+               hover:border-slate-300 hover:bg-slate-50
+               focus-visible:ring-slate-400
+               dark:border-slate-700 dark:bg-slate-900
                dark:text-slate-200 dark:hover:bg-slate-800;
     }
 
-    /*
-     * Bouton d'appel à l'action du site commercial.
-     *
-     * Quasi-noir plutôt que la couleur de marque : sur un fond blanc très
-     * aéré, le contraste maximal fait porter l'attention par la seule
-     * hiérarchie, sans recourir à une couleur vive. La couleur de marque
-     * reste réservée à l'application, où elle signale l'action en cours.
-     */
-    .btn-ink {
-        @apply btn bg-slate-900 text-white hover:bg-slate-800
-               focus-visible:ring-slate-900;
+    /* Action destructrice : la seule action dont la couleur prime sur l'encre,
+       parce que l'avertissement doit précéder le clic. */
+    .btn-danger {
+        @apply btn bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500;
+    }
+
+    /* Action tertiaire, sans cadre : pour les rangées d'actions d'un tableau,
+       où un bouton par ligne saturerait l'écran. */
+    .btn-ghost {
+        @apply btn px-3 text-slate-500 hover:bg-slate-100 hover:text-slate-900
+               focus-visible:ring-slate-400
+               dark:hover:bg-slate-800 dark:hover:text-white;
     }
 
     /* Surface du site commercial : la séparation vient de l'espace, pas du
@@ -75,20 +141,123 @@
         @apply rounded-2xl border border-slate-200 bg-white p-6;
     }
 
+    /*
+     * Carte : l'unité de base de toute page de l'application.
+     *
+     * `p-6` et non `p-5` : c'est le « plus d'air » demandé, et il se joue
+     * surtout là — une carte à l'étroit fait paraître dense une page qui ne
+     * l'est pas.
+     */
     .card {
-        @apply rounded-xl border border-slate-200 bg-white p-5 shadow-sm
+        @apply rounded-2xl border border-slate-200/70 bg-white p-6 shadow-card
                dark:border-slate-800 dark:bg-slate-900;
     }
 
+    /* Variante sans rembourrage, pour une carte dont le contenu est un tableau
+       ou une liste qui doit toucher les bords. */
+    .card-flush {
+        @apply overflow-hidden rounded-2xl border border-slate-200/70 bg-white
+               shadow-card dark:border-slate-800 dark:bg-slate-900;
+    }
+
+    /* Carte cliquable : le décollement au survol signale l'interactivité sans
+       ajouter ni bordure ni couleur. */
+    .card-link {
+        @apply transition duration-200 hover:-translate-y-0.5 hover:shadow-lift;
+    }
+
+    /* ── Tuiles d'icônes ────────────────────────────────────────────────────
+       En sombre, l'aplat pastel devient une transparence de la teinte : un
+       `bg-emerald-100` y resterait lumineux au point de brûler la carte. */
+    .tile-brand   { @apply tile bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-100; }
+    .tile-emerald { @apply tile bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300; }
+    .tile-amber   { @apply tile bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300; }
+    .tile-violet  { @apply tile bg-violet-50 text-violet-600 dark:bg-violet-500/15 dark:text-violet-300; }
+    .tile-rose    { @apply tile bg-rose-50 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300; }
+    .tile-slate   { @apply tile bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400; }
+
+    /* ── Typographie de page ────────────────────────────────────────────── */
+    .page-title {
+        @apply text-2xl font-semibold tracking-tight text-slate-900 dark:text-white;
+    }
+
+    .page-subtitle {
+        @apply mt-1.5 text-sm leading-relaxed text-slate-500 dark:text-slate-400;
+    }
+
+    .section-title {
+        @apply text-sm font-semibold tracking-tight text-slate-900 dark:text-white;
+    }
+
+    /* Intitulé de rubrique en petites capitales : sépare deux blocs sans
+       imposer un trait horizontal de plus. */
+    .eyebrow {
+        @apply text-[11px] font-semibold tracking-wider text-slate-400 uppercase;
+    }
+
+    /* ── Tableaux ───────────────────────────────────────────────────────────
+       Pas de bordure verticale, pas de zébrure : les colonnes se lisent par
+       leur alignement. Seul un filet horizontal très clair sépare les lignes. */
+    .table-head {
+        @apply border-b border-slate-200/70 bg-slate-50/60 text-left dark:border-slate-800 dark:bg-slate-950/40;
+    }
+
+    .th {
+        @apply px-5 py-3 text-[11px] font-semibold tracking-wider text-slate-500 uppercase dark:text-slate-400;
+    }
+
+    .td {
+        @apply px-5 py-4 text-sm text-slate-700 dark:text-slate-300;
+    }
+
+    .table-row {
+        @apply border-b border-slate-100 transition last:border-0
+               hover:bg-slate-50/70 dark:border-slate-800/70 dark:hover:bg-slate-800/40;
+    }
+
+    /* ── Formulaires ───────────────────────────────────────────────────────
+       L'anneau de focus reprend la couleur de marque : c'est un état, donc
+       une couleur légitime au sens de la règle 2. */
     .input {
-        @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm
-               placeholder:text-slate-400 focus:border-brand-500 focus:outline-none
-               focus:ring-1 focus:ring-brand-500
-               dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100;
+        @apply w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm
+               text-slate-900 transition
+               placeholder:text-slate-400
+               focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/25
+               disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500
+               dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100
+               dark:disabled:bg-slate-900;
     }
 
     .label {
-        @apply mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300;
+        @apply mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300;
+    }
+
+    /* Texte d'aide sous un champ : gris clair, jamais en italique — une
+       consigne de saisie doit se lire aussi vite que l'intitulé. */
+    .hint {
+        @apply mt-1.5 text-xs leading-relaxed text-slate-500 dark:text-slate-400;
+    }
+
+    .error {
+        @apply mt-1.5 text-xs font-medium text-red-600 dark:text-red-400;
+    }
+
+    /* ── Bandeaux de message ───────────────────────────────────────────────
+       Teinte plate et bordure de la même famille : un bandeau de succès ne
+       doit pas peser plus lourd à l'écran que le contenu qu'il commente. */
+    .alert-success {
+        @apply rounded-xl border border-emerald-200/70 bg-emerald-50 px-4 py-3 text-sm text-emerald-800
+               dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300;
+    }
+
+    .alert-error {
+        @apply rounded-xl border border-red-200/70 bg-red-50 px-4 py-3 text-sm text-red-800
+               dark:border-red-900 dark:bg-red-950/40 dark:text-red-300;
+    }
+
+    .alert-info {
+        @apply rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600
+               dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300;
     }
 }
 

@@ -6,6 +6,9 @@ import Pagination from '@/Components/Pagination.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import EmptyState from '@/Components/EmptyState.vue';
 import Modal from '@/Components/Modal.vue';
+import PageHeader from '@/Components/PageHeader.vue';
+import StatCard from '@/Components/StatCard.vue';
+import Icon from '@/Components/Icon.vue';
 
 const props = defineProps({
     documents: Object,
@@ -105,97 +108,101 @@ const formatSize = (bytes) =>
     <Head title="Base de connaissances" />
 
     <AppLayout>
-        <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
-            <div>
-                <h1 class="text-xl font-semibold">Base de connaissances</h1>
-                <p class="text-sm text-slate-500">
-                    Documents consultés par l'agent IA pour répondre aux clients.
-                </p>
-            </div>
-            <button class="btn-primary" @click="adding = true">Ajouter un document</button>
+        <PageHeader
+            title="Base de connaissances"
+            description="Les documents que l'agent consulte pour répondre avec vos informations plutôt que d'improviser."
+            icon="book"
+            tone="violet"
+        >
+            <template #actions>
+                <button class="btn-primary" @click="adding = true">
+                    <Icon name="plus" size="sm" />
+                    Ajouter un document
+                </button>
+            </template>
+        </PageHeader>
+
+        <div class="mb-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCard label="Documents prêts" :value="stats.ready" icon="checkCircle" tone="emerald" />
+            <StatCard label="En traitement" :value="stats.processing" icon="clock" tone="amber" />
+            <StatCard
+                label="En échec"
+                :value="stats.failed"
+                icon="alert"
+                :tone="stats.failed ? 'rose' : 'slate'"
+            />
+            <StatCard label="Fragments indexés" :value="stats.chunks" icon="document" tone="violet" />
         </div>
 
-        <div class="mb-6 grid gap-4 sm:grid-cols-4">
-            <div class="card">
-                <p class="text-sm text-slate-500">Documents prêts</p>
-                <p class="mt-1 text-2xl font-semibold text-emerald-600">{{ stats.ready }}</p>
+        <div class="card-flush">
+            <div v-if="documents.data.length" class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="table-head">
+                        <tr>
+                            <th class="th">Document</th>
+                            <th class="th">Type</th>
+                            <th class="th">Taille</th>
+                            <th class="th">Fragments</th>
+                            <th class="th">Statut</th>
+                            <th class="th" />
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="document in documents.data" :key="document.id" class="table-row">
+                            <td class="td">
+                                <p class="font-medium">{{ document.title }}</p>
+                                <p v-if="document.error" class="mt-0.5 text-xs text-red-600">
+                                    {{ document.error }}
+                                </p>
+                                <p v-else-if="document.uploader" class="mt-0.5 text-xs text-slate-500">
+                                    Ajouté par {{ document.uploader.name }}
+                                </p>
+                            </td>
+                            <td class="td text-xs tracking-wide uppercase text-slate-500">{{ document.source_type }}</td>
+                            <td class="td whitespace-nowrap text-slate-500 tabular-nums">{{ formatSize(document.size_bytes) }}</td>
+                            <td class="td text-slate-500 tabular-nums">{{ document.chunks_count || '—' }}</td>
+                            <td class="td">
+                                <span class="flex items-center gap-2">
+                                    <StatusBadge :status="document.status" :label="STATUS_LABELS[document.status]" />
+                                    <!-- Point clignotant : le statut seul ne dit pas
+                                         que la page se rafraîchit toute seule. -->
+                                    <span
+                                        v-if="PROCESSING.includes(document.status)"
+                                        class="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-500"
+                                    />
+                                </span>
+                            </td>
+                            <td class="td text-right whitespace-nowrap">
+                                <button
+                                    v-if="!PROCESSING.includes(document.status)"
+                                    class="btn-ghost text-xs"
+                                    @click="reprocess(document)"
+                                >
+                                    Réindexer
+                                </button>
+                                <button
+                                    class="btn-ghost text-xs text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/40"
+                                    @click="deleting = document"
+                                >
+                                    Supprimer
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
-            <div class="card">
-                <p class="text-sm text-slate-500">En traitement</p>
-                <p class="mt-1 text-2xl font-semibold">{{ stats.processing }}</p>
-            </div>
-            <div class="card">
-                <p class="text-sm text-slate-500">En échec</p>
-                <p class="mt-1 text-2xl font-semibold" :class="stats.failed && 'text-red-600'">
-                    {{ stats.failed }}
-                </p>
-            </div>
-            <div class="card">
-                <p class="text-sm text-slate-500">Fragments indexés</p>
-                <p class="mt-1 text-2xl font-semibold">{{ stats.chunks }}</p>
-            </div>
-        </div>
-
-        <div class="card overflow-hidden p-0">
-            <table v-if="documents.data.length" class="w-full text-sm">
-                <thead class="border-b border-slate-100 text-left text-xs uppercase tracking-wide text-slate-500 dark:border-slate-800">
-                    <tr>
-                        <th class="px-5 py-3 font-medium">Document</th>
-                        <th class="px-5 py-3 font-medium">Type</th>
-                        <th class="px-5 py-3 font-medium">Taille</th>
-                        <th class="px-5 py-3 font-medium">Fragments</th>
-                        <th class="px-5 py-3 font-medium">Statut</th>
-                        <th class="px-5 py-3" />
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-                    <tr v-for="document in documents.data" :key="document.id">
-                        <td class="px-5 py-3">
-                            <p class="font-medium">{{ document.title }}</p>
-                            <p v-if="document.error" class="mt-0.5 text-xs text-red-600">
-                                {{ document.error }}
-                            </p>
-                            <p v-else-if="document.uploader" class="mt-0.5 text-xs text-slate-500">
-                                Ajouté par {{ document.uploader.name }}
-                            </p>
-                        </td>
-                        <td class="px-5 py-3 uppercase text-slate-500">{{ document.source_type }}</td>
-                        <td class="px-5 py-3 text-slate-500">{{ formatSize(document.size_bytes) }}</td>
-                        <td class="px-5 py-3 text-slate-500">{{ document.chunks_count || '—' }}</td>
-                        <td class="px-5 py-3">
-                            <span class="flex items-center gap-2">
-                                <StatusBadge :status="document.status" :label="STATUS_LABELS[document.status]" />
-                                <span
-                                    v-if="PROCESSING.includes(document.status)"
-                                    class="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-500"
-                                />
-                            </span>
-                        </td>
-                        <td class="px-5 py-3 text-right whitespace-nowrap">
-                            <button
-                                v-if="!PROCESSING.includes(document.status)"
-                                class="text-xs text-slate-500 hover:underline"
-                                @click="reprocess(document)"
-                            >
-                                Réindexer
-                            </button>
-                            <button
-                                class="ml-3 text-xs text-red-600 hover:underline"
-                                @click="deleting = document"
-                            >
-                                Supprimer
-                            </button>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
 
             <EmptyState
                 v-else
+                icon="book"
+                tone="violet"
                 title="Aucun document"
                 description="Ajoutez vos documents commerciaux, contrats types ou fiches produits : l'agent s'en servira pour répondre avec vos informations plutôt que d'improviser."
             >
-                <button class="btn-primary" @click="adding = true">Ajouter un document</button>
+                <button class="btn-primary" @click="adding = true">
+                    <Icon name="plus" size="sm" />
+                    Ajouter un document
+                </button>
             </EmptyState>
         </div>
 

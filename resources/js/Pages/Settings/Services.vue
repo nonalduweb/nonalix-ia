@@ -5,6 +5,9 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import SettingsNav from '@/Components/SettingsNav.vue';
 import Modal from '@/Components/Modal.vue';
 import EmptyState from '@/Components/EmptyState.vue';
+import PageHeader from '@/Components/PageHeader.vue';
+import StatusBadge from '@/Components/StatusBadge.vue';
+import Icon from '@/Components/Icon.vue';
 import { decimals, formatMoney, toMajor, toMinor } from '@/money';
 
 const props = defineProps({
@@ -96,64 +99,77 @@ const formatPrice = (service) => {
     <Head title="Prestations" />
 
     <AppLayout>
-        <h1 class="mb-6 text-xl font-semibold">Configuration</h1>
+        <PageHeader
+            title="Prestations"
+            description="Ces tarifs sont la seule source de prix communiquée à l'agent. Il lui est explicitement interdit d'en annoncer d'autres : ce qui ne figure pas ici est renvoyé vers un conseiller."
+            icon="money"
+            tone="emerald"
+        >
+            <template #actions>
+                <button class="btn-primary" @click="openCreate">
+                    <Icon name="plus" size="sm" />
+                    Ajouter
+                </button>
+            </template>
+        </PageHeader>
+
         <SettingsNav />
 
-        <div class="mb-4 flex items-start justify-between gap-4">
-            <p class="max-w-2xl text-sm text-slate-500">
-                Ces tarifs sont la <strong>seule</strong> source de prix communiquée à l'agent
-                IA. Il lui est explicitement interdit d'en annoncer d'autres : ce qui ne
-                figure pas ici sera renvoyé vers un conseiller.
-            </p>
-            <button class="btn-primary shrink-0" @click="openCreate">Ajouter</button>
-        </div>
-
-        <div class="card overflow-hidden p-0">
-            <table v-if="services.length" class="w-full text-sm">
-                <thead class="border-b border-slate-100 text-left text-xs uppercase tracking-wide text-slate-500 dark:border-slate-800">
-                    <tr>
-                        <th class="px-5 py-3 font-medium">Prestation</th>
-                        <th class="px-5 py-3 font-medium">Tarif</th>
-                        <th class="px-5 py-3 font-medium">Durée</th>
-                        <th class="px-5 py-3 font-medium">État</th>
-                        <th class="px-5 py-3" />
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-                    <tr v-for="service in services" :key="service.id">
-                        <td class="px-5 py-3">
-                            <p class="font-medium">{{ service.name }}</p>
-                            <p v-if="service.description" class="mt-0.5 max-w-md truncate text-xs text-slate-500">
-                                {{ service.description }}
-                            </p>
-                        </td>
-                        <td class="px-5 py-3 whitespace-nowrap">{{ formatPrice(service) }}</td>
-                        <td class="px-5 py-3 text-slate-500">
-                            {{ service.duration_minutes ? service.duration_minutes + ' min' : '—' }}
-                        </td>
-                        <td class="px-5 py-3">
-                            <span class="text-xs" :class="service.is_active ? 'text-emerald-600' : 'text-slate-400'">
-                                {{ service.is_active ? 'Active' : 'Masquée' }}
-                            </span>
-                        </td>
-                        <td class="px-5 py-3 text-right whitespace-nowrap">
-                            <button class="text-xs text-slate-500 hover:underline" @click="openEdit(service)">
-                                Modifier
-                            </button>
-                            <button class="ml-3 text-xs text-red-600 hover:underline" @click="deleting = service">
-                                Supprimer
-                            </button>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+        <div class="card-flush mt-5">
+            <div v-if="services.length" class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="table-head">
+                        <tr>
+                            <th class="th">Prestation</th>
+                            <th class="th">Tarif</th>
+                            <th class="th">Durée</th>
+                            <th class="th">État</th>
+                            <th class="th" />
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="service in services" :key="service.id" class="table-row">
+                            <td class="td">
+                                <p class="font-medium text-slate-900 dark:text-white">{{ service.name }}</p>
+                                <p v-if="service.description" class="mt-0.5 max-w-md truncate text-xs text-slate-500">
+                                    {{ service.description }}
+                                </p>
+                            </td>
+                            <td class="td font-medium whitespace-nowrap tabular-nums">{{ formatPrice(service) }}</td>
+                            <td class="td whitespace-nowrap text-slate-500">
+                                {{ service.duration_minutes ? service.duration_minutes + ' min' : '—' }}
+                            </td>
+                            <td class="td">
+                                <StatusBadge
+                                    :status="service.is_active ? 'active' : 'closed'"
+                                    :label="service.is_active ? 'Active' : 'Masquée'"
+                                />
+                            </td>
+                            <td class="td text-right whitespace-nowrap">
+                                <button class="btn-ghost text-xs" @click="openEdit(service)">Modifier</button>
+                                <button
+                                    class="btn-ghost text-xs text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/40"
+                                    @click="deleting = service"
+                                >
+                                    Supprimer
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
 
             <EmptyState
                 v-else
+                icon="money"
+                tone="emerald"
                 title="Aucune prestation"
                 description="Sans catalogue, l'agent ne pourra communiquer aucun tarif et transférera systématiquement à un humain."
             >
-                <button class="btn-primary" @click="openCreate">Ajouter une prestation</button>
+                <button class="btn-primary" @click="openCreate">
+                    <Icon name="plus" size="sm" />
+                    Ajouter une prestation
+                </button>
             </EmptyState>
         </div>
 

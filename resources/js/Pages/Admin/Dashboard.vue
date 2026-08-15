@@ -1,6 +1,7 @@
 <script setup>
 import { Head, Link } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
+import PageHeader from '@/Components/PageHeader.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 
 defineProps({
@@ -21,7 +22,12 @@ const formatDateTime = (iso) => (iso ? new Date(iso).toLocaleString('fr-FR') : '
     <Head title="Administration" />
 
     <AdminLayout>
-        <h1 class="mb-6 text-xl font-semibold">Vue d'ensemble</h1>
+        <PageHeader
+            title="Vue d'ensemble"
+            description="L'état de la plateforme entière : entreprises, volume et coût."
+            icon="home"
+            tone="brand"
+        />
 
         <section class="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Link href="/tenants" class="card transition hover:border-brand-300">

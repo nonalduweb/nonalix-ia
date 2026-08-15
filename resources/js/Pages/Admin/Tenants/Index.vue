@@ -2,6 +2,7 @@
 import { reactive, ref, watch } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
+import PageHeader from '@/Components/PageHeader.vue';
 import { formatMoney, formatPlanPrice } from '@/money';
 import Pagination from '@/Components/Pagination.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
@@ -82,10 +83,16 @@ const formatDate = (iso) =>
     <Head title="Entreprises" />
 
     <AdminLayout>
-        <div class="mb-6 flex items-center justify-between">
-            <h1 class="text-xl font-semibold">Entreprises</h1>
-            <button class="btn-primary" @click="creating = true">Créer une entreprise</button>
-        </div>
+        <PageHeader
+            title="Entreprises"
+            description="Tous les comptes clients de la plateforme, leur formule et leur état."
+            icon="users"
+            tone="brand"
+        >
+            <template #actions>
+                <button class="btn-primary" @click="creating = true">Créer une entreprise</button>
+            </template>
+        </PageHeader>
 
         <div class="card mb-4 flex flex-wrap gap-3">
             <input v-model="filters.q" type="search" placeholder="Nom ou identifiant…" class="input max-w-xs" />

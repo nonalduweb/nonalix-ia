@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import SettingsNav from '@/Components/SettingsNav.vue';
+import PageHeader from '@/Components/PageHeader.vue';
 
 const props = defineProps({
     inboundAddress: String,
@@ -38,7 +39,13 @@ const formatDate = (iso) =>
     <Head title="Canal e-mail" />
 
     <AppLayout>
-        <h1 class="mb-6 text-xl font-semibold">Configuration</h1>
+        <PageHeader
+            title="Canal e-mail"
+            description="L'adresse depuis laquelle l'agent reçoit et répond aux messages écrits."
+            icon="mail"
+            tone="violet"
+        />
+
         <SettingsNav />
 
         <div class="grid gap-6 lg:grid-cols-3">

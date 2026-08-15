@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
+import PageHeader from '@/Components/PageHeader.vue';
 import Modal from '@/Components/Modal.vue';
 
 const props = defineProps({
@@ -62,15 +63,16 @@ const usesLabel = (code) => (code.maxUses === 0 ? `${code.usedCount} / ∞` : `$
     <Head title="Codes d'accès" />
 
     <AdminLayout>
-        <div class="mb-6 flex items-center justify-between">
-            <div>
-                <h1 class="text-xl font-semibold">Codes d'accès</h1>
-                <p class="mt-1 text-sm text-slate-500">
-                    L'inscription est fermée : seul un code émis ici permet de créer une entreprise.
-                </p>
-            </div>
-            <button class="btn-primary" @click="openCreate">Générer des codes</button>
-        </div>
+        <PageHeader
+            title="Codes d'accès"
+            description="L'inscription est fermée : seul un code émis ici permet de créer une entreprise."
+            icon="target"
+            tone="emerald"
+        >
+            <template #actions>
+                <button class="btn-primary" @click="openCreate">Générer des codes</button>
+            </template>
+        </PageHeader>
 
         <div v-if="!codes.length" class="card text-sm text-slate-500">
             Aucun code émis. Générez-en un pour ouvrir un compte à un client.

@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import PageHeader from '@/Components/PageHeader.vue';
 import SettingsNav from '@/Components/SettingsNav.vue';
 import Modal from '@/Components/Modal.vue';
 
@@ -249,14 +250,18 @@ onMounted(loadVoices);
     <Head :title="isNew ? 'Créer un Agent IA' : 'Configurer l\'Agent IA'" />
 
     <AppLayout>
-        <div class="flex items-center gap-3 mb-6">
-            <Link href="/settings/agent" class="text-slate-400 hover:text-slate-600 transition text-sm">
-                ← Retour
-            </Link>
-            <h1 class="text-xl font-semibold">
-                {{ isNew ? 'Créer un nouvel Agent IA' : `Configurer l'Agent : ${agent.name}` }}
-            </h1>
-        </div>
+        <Link href="/settings/agent" class="mb-4 inline-block text-sm text-slate-400 transition hover:text-slate-600">
+            ← Retour
+        </Link>
+
+        <PageHeader
+            :title="isNew ? 'Créer un nouvel agent IA' : agent.name"
+            :description="isNew
+                ? 'Un agent regroupe des instructions, un profil et des capacités. Il répond à vos clients en votre nom.'
+                : 'Instructions, profil et capacités de cet agent. Le banc d\'essai ci-dessous répond avec la configuration enregistrée.'"
+            icon="sparkles"
+            tone="violet"
+        />
 
         <!-- Banc d'essai : voir le résultat avant de le montrer à ses clients -->
         <section v-if="!isNew" class="card mb-6 space-y-4">

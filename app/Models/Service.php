@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
 use App\Models\Concerns\HasUuidPrimaryKey;
+use App\Support\Money;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -43,15 +44,20 @@ class Service extends Model
         return $query->where('is_active', true)->orderBy('position');
     }
 
-    /** Libellé de prix prêt à être lu par un humain — et par l'agent. */
+    /**
+     * Libellé de prix prêt à être lu par un humain — et par l'agent.
+     *
+     * Délégué à Money : ce libellé part tel quel dans le prompt et dans la
+     * réponse de l'agent. Un facteur cent appliqué au franc CFA y annonçait
+     * « 150,00 XOF » pour une prestation facturée 15 000 F CFA.
+     */
     public function formattedPrice(): string
     {
         if ($this->price_type === 'quote' || $this->price_cents === null) {
             return 'sur devis';
         }
 
-        $amount = number_format($this->price_cents / 100, 2, ',', ' ')
-            .' '.($this->currency === 'EUR' ? '€' : $this->currency);
+        $amount = Money::format($this->price_cents, $this->currency);
 
         return match ($this->price_type) {
             'from'   => 'à partir de '.$amount,

@@ -2,6 +2,7 @@
 import { reactive, ref, watch } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
+import PageHeader from '@/Components/PageHeader.vue';
 import Pagination from '@/Components/Pagination.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import Modal from '@/Components/Modal.vue';
@@ -45,7 +46,12 @@ const formatDateTime = (iso) => (iso ? new Date(iso).toLocaleString('fr-FR') : '
     <Head title="Incidents" />
 
     <AdminLayout>
-        <h1 class="mb-6 text-xl font-semibold">Incidents</h1>
+        <PageHeader
+            title="Incidents"
+            description="Les erreurs remontées par les canaux, les fournisseurs IA et les traitements de fond."
+            icon="alert"
+            tone="rose"
+        />
 
         <div class="card mb-4 flex flex-wrap items-center gap-4">
             <select v-model="filters.level" class="input max-w-44">

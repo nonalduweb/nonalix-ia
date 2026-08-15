@@ -2,6 +2,8 @@
 import { Head, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import SettingsNav from '@/Components/SettingsNav.vue';
+import PageHeader from '@/Components/PageHeader.vue';
+import { formatMoney } from '@/money';
 
 const props = defineProps({
     plans: Array,
@@ -28,9 +30,9 @@ const formatDate = (iso) => {
     return iso ? new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
 };
 
-const formatPrice = (cents) => {
-    return (cents / 100).toLocaleString('fr-FR') + ' F CFA';
-};
+// La devise vient du plan : « F CFA » codé en dur, divisé par cent, affichait
+// 150 F CFA pour un plan facturé 15 000.
+const formatPrice = (plan) => formatMoney(plan.price_cents, plan.currency);
 
 const getStatusBadgeClass = (status) => {
     return {
@@ -55,7 +57,13 @@ const getStatusLabel = (status) => {
     <Head title="Facturation et Abonnements" />
 
     <AppLayout>
-        <h1 class="mb-6 text-xl font-semibold">Configuration</h1>
+        <PageHeader
+            title="Facturation"
+            description="Votre abonnement, votre consommation en cours et les formules disponibles."
+            icon="money"
+            tone="amber"
+        />
+
         <SettingsNav />
 
         <div class="grid gap-6 lg:grid-cols-3">
@@ -233,9 +241,11 @@ const getStatusLabel = (status) => {
 
                             <div class="flex items-baseline gap-1 py-1">
                                 <span class="text-xl font-black text-slate-900 dark:text-white">
-                                    {{ plan.price_cents === 0 ? 'Gratuit' : formatPrice(plan.price_cents) }}
+                                    {{ plan.price_cents === 0 ? 'Gratuit' : formatPrice(plan) }}
                                 </span>
-                                <span v-if="plan.price_cents > 0" class="text-[10px] text-slate-400">/ mois</span>
+                                <span v-if="plan.price_cents > 0" class="text-[10px] text-slate-400">
+                                    / {{ plan.interval === 'year' ? 'an' : 'mois' }}
+                                </span>
                             </div>
 
                             <p class="text-xs text-slate-500 leading-normal">{{ plan.description }}</p>

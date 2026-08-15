@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import PageHeader from '@/Components/PageHeader.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import Modal from '@/Components/Modal.vue';
 
@@ -39,15 +40,18 @@ const formatDateTime = (iso) => (iso ? new Date(iso).toLocaleString('fr-FR') : '
             ← Contacts
         </Link>
 
-        <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
-            <div>
-                <h1 class="text-xl font-semibold">
-                    {{ contact.name || contact.profile_name || 'Contact sans nom' }}
-                </h1>
-                <p class="font-mono text-sm text-slate-500">+{{ contact.wa_id }}</p>
-            </div>
-            <StatusBadge :status="contact.opt_in_status" />
-        </div>
+        <PageHeader
+            :title="contact.name || contact.profile_name || 'Contact sans nom'"
+            icon="users"
+            tone="brand"
+        >
+            <template #meta>
+                <p class="mt-1.5 font-mono text-sm text-slate-500">+{{ contact.wa_id }}</p>
+            </template>
+            <template #actions>
+                <StatusBadge :status="contact.opt_in_status" />
+            </template>
+        </PageHeader>
 
         <div class="grid gap-6 lg:grid-cols-3">
             <div class="space-y-6 lg:col-span-2">

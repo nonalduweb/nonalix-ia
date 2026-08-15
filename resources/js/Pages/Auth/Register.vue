@@ -1,5 +1,6 @@
 <script setup>
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import BrandLogo from '@/Components/BrandLogo.vue';
 import { ref, watch } from 'vue';
 
 const props = defineProps({
@@ -86,7 +87,7 @@ const submit = () => {
     <div class="flex min-h-screen items-center justify-center px-4 py-12">
         <div class="w-full max-w-lg">
             <h1 class="mb-1 flex justify-center">
-                <img src="/logo-nonalixia.png" alt="Nonalix IA" width="500" height="105" class="h-9 w-auto invert hue-rotate-180 dark:invert-0 dark:hue-rotate-0" />
+                <BrandLogo size="lg" />
             </h1>
             <p class="mb-8 text-center text-sm text-slate-500">Créer mon entreprise</p>
 
