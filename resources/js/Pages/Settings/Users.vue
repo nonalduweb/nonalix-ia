@@ -102,59 +102,61 @@ const formatDateTime = (iso) => (iso ? new Date(iso).toLocaleString('fr-FR') : '
         <SettingsNav />
 
         <div class="card-flush mt-5">
-            <table class="w-full">
-                <thead class="table-head">
-                    <tr>
-                        <th class="th">Utilisateur</th>
-                        <th class="th">Rôle</th>
-                        <th class="th">2FA</th>
-                        <th class="th">Dernière connexion</th>
-                        <th class="th">État</th>
-                        <th class="th" />
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="user in users" :key="user.id" class="table-row">
-                        <td class="td">
-                            <p class="font-medium text-slate-900 dark:text-white">
-                                {{ user.name }}
-                                <span v-if="user.id === currentUser?.id" class="ml-1 text-xs text-slate-400">(vous)</span>
-                            </p>
-                            <p class="text-xs text-slate-500">{{ user.email }}</p>
-                        </td>
-                        <td class="td whitespace-nowrap">
-                            {{ ROLE_LABELS[user.roles[0]] ?? user.roles[0] ?? '—' }}
-                        </td>
-                        <td class="td">
-                            <Icon v-if="user.two_factor" name="checkCircle" size="sm" class="text-emerald-600" />
-                            <!-- Un compte à privilèges sans 2FA est le point de
-                                 compromission le plus direct d'un tenant. -->
-                            <span
-                                v-else-if="['owner', 'admin'].includes(user.roles[0])"
-                                class="text-xs whitespace-nowrap text-amber-600"
-                                title="Obligatoire pour ce rôle"
-                            >
-                                à activer
-                            </span>
-                            <span v-else class="text-slate-400">—</span>
-                        </td>
-                        <td class="td whitespace-nowrap text-slate-500 tabular-nums">{{ formatDateTime(user.last_login_at) }}</td>
-                        <td class="td">
-                            <StatusBadge :status="user.status" :label="STATUS_LABELS[user.status]" />
-                        </td>
-                        <td class="td text-right whitespace-nowrap">
-                            <button class="btn-ghost text-xs" @click="openEdit(user)">Modifier</button>
-                            <button
-                                v-if="user.id !== currentUser?.id"
-                                class="btn-ghost text-xs text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/40"
-                                @click="deleting = user"
-                            >
-                                Retirer
-                            </button>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="table-head">
+                        <tr>
+                            <th class="th">Utilisateur</th>
+                            <th class="th">Rôle</th>
+                            <th class="th">2FA</th>
+                            <th class="th">Dernière connexion</th>
+                            <th class="th">État</th>
+                            <th class="th" />
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="user in users" :key="user.id" class="table-row">
+                            <td class="td">
+                                <p class="font-medium text-slate-900 dark:text-white">
+                                    {{ user.name }}
+                                    <span v-if="user.id === currentUser?.id" class="ml-1 text-xs text-slate-400">(vous)</span>
+                                </p>
+                                <p class="text-xs text-slate-500">{{ user.email }}</p>
+                            </td>
+                            <td class="td whitespace-nowrap">
+                                {{ ROLE_LABELS[user.roles[0]] ?? user.roles[0] ?? '—' }}
+                            </td>
+                            <td class="td">
+                                <Icon v-if="user.two_factor" name="checkCircle" size="sm" class="text-emerald-600" />
+                                <!-- Un compte à privilèges sans 2FA est le point de
+                                     compromission le plus direct d'un tenant. -->
+                                <span
+                                    v-else-if="['owner', 'admin'].includes(user.roles[0])"
+                                    class="text-xs whitespace-nowrap text-amber-600"
+                                    title="Obligatoire pour ce rôle"
+                                >
+                                    à activer
+                                </span>
+                                <span v-else class="text-slate-400">—</span>
+                            </td>
+                            <td class="td whitespace-nowrap text-slate-500 tabular-nums">{{ formatDateTime(user.last_login_at) }}</td>
+                            <td class="td">
+                                <StatusBadge :status="user.status" :label="STATUS_LABELS[user.status]" />
+                            </td>
+                            <td class="td text-right whitespace-nowrap">
+                                <button class="btn-ghost text-xs" @click="openEdit(user)">Modifier</button>
+                                <button
+                                    v-if="user.id !== currentUser?.id"
+                                    class="btn-ghost text-xs text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/40"
+                                    @click="deleting = user"
+                                >
+                                    Retirer
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
 
         <!-- Invitation -->

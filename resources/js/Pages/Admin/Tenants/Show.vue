@@ -149,25 +149,27 @@ const formatDateTime = (iso) => (iso ? new Date(iso).toLocaleString('fr-FR') : '
                     <h2 class="border-b border-slate-100 px-5 py-4 text-sm font-semibold dark:border-slate-800">
                         Utilisateurs ({{ users.length }})
                     </h2>
-                    <table class="w-full text-sm">
-                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-                            <tr v-for="user in users" :key="user.id">
-                                <td class="px-5 py-3">
-                                    <p class="font-medium">{{ user.name }}</p>
-                                    <p class="text-xs text-slate-500">{{ user.email }}</p>
-                                </td>
-                                <td class="px-5 py-3 text-slate-500">
-                                    {{ user.roles?.map((r) => r.name).join(', ') || '—' }}
-                                </td>
-                                <td class="px-5 py-3">
-                                    <StatusBadge :status="user.status" />
-                                </td>
-                                <td class="px-5 py-3 text-xs text-slate-500">
-                                    {{ formatDateTime(user.last_login_at) }}
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                                <tr v-for="user in users" :key="user.id">
+                                    <td class="px-5 py-3">
+                                        <p class="font-medium">{{ user.name }}</p>
+                                        <p class="text-xs text-slate-500">{{ user.email }}</p>
+                                    </td>
+                                    <td class="px-5 py-3 text-slate-500">
+                                        {{ user.roles?.map((r) => r.name).join(', ') || '—' }}
+                                    </td>
+                                    <td class="px-5 py-3">
+                                        <StatusBadge :status="user.status" />
+                                    </td>
+                                    <td class="px-5 py-3 text-xs text-slate-500">
+                                        {{ formatDateTime(user.last_login_at) }}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </section>
             </div>
 

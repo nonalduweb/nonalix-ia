@@ -105,33 +105,35 @@ const formatDate = (iso) =>
         </div>
 
         <div class="card overflow-hidden p-0">
-            <table class="w-full text-sm">
-                <thead class="border-b border-slate-100 text-left text-xs uppercase tracking-wide text-slate-500 dark:border-slate-800">
-                    <tr>
-                        <th class="px-5 py-3 font-medium">Entreprise</th>
-                        <th class="px-5 py-3 font-medium">Plan</th>
-                        <th class="px-5 py-3 font-medium">Utilisateurs</th>
-                        <th class="px-5 py-3 font-medium">Statut</th>
-                        <th class="px-5 py-3 font-medium">Créée</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-                    <tr v-for="tenant in tenants.data" :key="tenant.id" class="transition hover:bg-slate-50 dark:hover:bg-slate-800">
-                        <td class="px-5 py-3">
-                            <Link :href="`/tenants/${tenant.id}`" class="font-medium hover:underline">
-                                {{ tenant.name }}
-                            </Link>
-                            <p class="text-xs text-slate-500">{{ tenant.slug }}</p>
-                        </td>
-                        <td class="px-5 py-3">{{ tenant.plan?.name ?? '—' }}</td>
-                        <td class="px-5 py-3 text-slate-500">{{ tenant.users_count }}</td>
-                        <td class="px-5 py-3">
-                            <StatusBadge :status="tenant.status" :label="statusLabel(tenant.status)" />
-                        </td>
-                        <td class="px-5 py-3 text-slate-500">{{ formatDate(tenant.created_at) }}</td>
-                    </tr>
-                </tbody>
-            </table>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="border-b border-slate-100 text-left text-xs uppercase tracking-wide text-slate-500 dark:border-slate-800">
+                        <tr>
+                            <th class="px-5 py-3 font-medium">Entreprise</th>
+                            <th class="px-5 py-3 font-medium">Plan</th>
+                            <th class="px-5 py-3 font-medium">Utilisateurs</th>
+                            <th class="px-5 py-3 font-medium">Statut</th>
+                            <th class="px-5 py-3 font-medium">Créée</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                        <tr v-for="tenant in tenants.data" :key="tenant.id" class="transition hover:bg-slate-50 dark:hover:bg-slate-800">
+                            <td class="px-5 py-3">
+                                <Link :href="`/tenants/${tenant.id}`" class="font-medium hover:underline">
+                                    {{ tenant.name }}
+                                </Link>
+                                <p class="text-xs text-slate-500">{{ tenant.slug }}</p>
+                            </td>
+                            <td class="px-5 py-3">{{ tenant.plan?.name ?? '—' }}</td>
+                            <td class="px-5 py-3 text-slate-500">{{ tenant.users_count }}</td>
+                            <td class="px-5 py-3">
+                                <StatusBadge :status="tenant.status" :label="statusLabel(tenant.status)" />
+                            </td>
+                            <td class="px-5 py-3 text-slate-500">{{ formatDate(tenant.created_at) }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
 
             <p v-if="!tenants.data.length" class="px-5 py-12 text-center text-sm text-slate-500">
                 Aucune entreprise pour ces critères.

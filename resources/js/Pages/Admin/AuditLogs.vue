@@ -63,48 +63,50 @@ const formatDateTime = (iso) => (iso ? new Date(iso).toLocaleString('fr-FR') : '
         </div>
 
         <div class="card overflow-hidden p-0">
-            <table class="w-full text-sm">
-                <thead class="border-b border-slate-100 text-left text-xs uppercase tracking-wide text-slate-500 dark:border-slate-800">
-                    <tr>
-                        <th class="px-5 py-3 font-medium">Date</th>
-                        <th class="px-5 py-3 font-medium">Action</th>
-                        <th class="px-5 py-3 font-medium">Auteur</th>
-                        <th class="px-5 py-3 font-medium">Entreprise</th>
-                        <th class="px-5 py-3 font-medium">IP</th>
-                        <th class="px-5 py-3" />
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-                    <tr v-for="log in logs.data" :key="log.id">
-                        <td class="px-5 py-2.5 text-xs whitespace-nowrap text-slate-500">
-                            {{ formatDateTime(log.created_at) }}
-                        </td>
-                        <td class="px-5 py-2.5">
-                            <span
-                                class="font-mono text-xs"
-                                :class="isCritical(log.action) && 'font-semibold text-red-600'"
-                            >
-                                {{ log.action }}
-                            </span>
-                        </td>
-                        <td class="px-5 py-2.5">
-                            {{ log.user?.name ?? 'Système' }}
-                            <span v-if="log.user?.email" class="block text-xs text-slate-500">{{ log.user.email }}</span>
-                        </td>
-                        <td class="px-5 py-2.5 text-slate-500">{{ log.tenant?.name ?? '—' }}</td>
-                        <td class="px-5 py-2.5 font-mono text-xs text-slate-500">{{ log.ip_address ?? '—' }}</td>
-                        <td class="px-5 py-2.5 text-right">
-                            <button
-                                v-if="log.changes || log.context"
-                                class="text-xs text-slate-500 hover:underline"
-                                @click="inspecting = log"
-                            >
-                                Détail
-                            </button>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="border-b border-slate-100 text-left text-xs uppercase tracking-wide text-slate-500 dark:border-slate-800">
+                        <tr>
+                            <th class="px-5 py-3 font-medium">Date</th>
+                            <th class="px-5 py-3 font-medium">Action</th>
+                            <th class="px-5 py-3 font-medium">Auteur</th>
+                            <th class="px-5 py-3 font-medium">Entreprise</th>
+                            <th class="px-5 py-3 font-medium">IP</th>
+                            <th class="px-5 py-3" />
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                        <tr v-for="log in logs.data" :key="log.id">
+                            <td class="px-5 py-2.5 text-xs whitespace-nowrap text-slate-500">
+                                {{ formatDateTime(log.created_at) }}
+                            </td>
+                            <td class="px-5 py-2.5">
+                                <span
+                                    class="font-mono text-xs"
+                                    :class="isCritical(log.action) && 'font-semibold text-red-600'"
+                                >
+                                    {{ log.action }}
+                                </span>
+                            </td>
+                            <td class="px-5 py-2.5">
+                                {{ log.user?.name ?? 'Système' }}
+                                <span v-if="log.user?.email" class="block text-xs text-slate-500">{{ log.user.email }}</span>
+                            </td>
+                            <td class="px-5 py-2.5 text-slate-500">{{ log.tenant?.name ?? '—' }}</td>
+                            <td class="px-5 py-2.5 font-mono text-xs text-slate-500">{{ log.ip_address ?? '—' }}</td>
+                            <td class="px-5 py-2.5 text-right">
+                                <button
+                                    v-if="log.changes || log.context"
+                                    class="text-xs text-slate-500 hover:underline"
+                                    @click="inspecting = log"
+                                >
+                                    Détail
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
 
             <p v-if="!logs.data.length" class="px-5 py-12 text-center text-sm text-slate-500">
                 Aucune entrée pour ces critères.

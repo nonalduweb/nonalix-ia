@@ -23,7 +23,14 @@ const props = defineProps({
 const page = usePage();
 const thread = ref(null);
 const live = ref([]);
-const showSidebar = ref(true);
+/*
+ * Volet de détails : ouvert d'office sur grand écran, fermé sur mobile.
+ *
+ * Il y recouvre le fil au lieu de se poser à côté — 320 px de plus ne tiennent
+ * pas sur un téléphone. L'ouvrir par défaut masquerait donc la conversation
+ * qu'on vient tout juste d'ouvrir.
+ */
+const showSidebar = ref(typeof window === 'undefined' || window.innerWidth >= 1024);
 
 /*
 | Actualisation de la liste
@@ -414,6 +421,18 @@ const selectConversation = (id) => {
     });
 };
 
+/*
+ * Retour à la liste — mobile uniquement.
+ *
+ * Sous 1024 px, les trois volets ne tiennent pas côte à côte : l'écran affiche
+ * soit la liste, soit le fil. C'est le va-et-vient maître/détail habituel d'une
+ * messagerie sur téléphone, et il lui faut une sortie explicite, sinon on ne
+ * peut plus changer de conversation sans le bouton « précédent » du navigateur.
+ */
+const backToList = () => {
+    router.visit('/conversations', { preserveState: true, preserveScroll: true });
+};
+
 // Toggle AI mode
 const toggleAi = () => {
     const action = props.conversation.ai_enabled ? 'handover' : 'resume-ai';
@@ -590,10 +609,21 @@ const toggleTranscript = (id) => {
             tone="brand"
         />
 
-        <div class="card-flush flex h-[calc(100vh-14rem)] min-h-[550px]">
+        <!--
+          `dvh` et non `vh` sur mobile : sur iOS et Android, `100vh` compte la
+          hauteur de l'écran barre d'adresse rétractée. Le compositeur de
+          message tombait donc sous le bord visible tant que la barre était
+          déployée — c'est-à-dire à l'ouverture de la page.
+        -->
+        <div class="card-flush relative flex h-[calc(100dvh-13rem)] min-h-[440px] lg:h-[calc(100vh-14rem)] lg:min-h-[550px]">
 
-            <!-- 1. VOLET GAUCHE : LISTE DES DISCUSSIONS -->
-            <div class="flex h-full w-80 shrink-0 flex-col border-r border-slate-200/70 bg-slate-50/60 dark:border-slate-800 dark:bg-slate-900/50">
+            <!-- 1. VOLET GAUCHE : LISTE DES DISCUSSIONS
+                 Sous 1024 px, elle cède la place au fil dès qu'une
+                 conversation est ouverte. -->
+            <div
+                class="h-full w-full shrink-0 flex-col border-r border-slate-200/70 bg-slate-50/60 lg:flex lg:w-80 dark:border-slate-800 dark:bg-slate-900/50"
+                :class="conversation ? 'hidden' : 'flex'"
+            >
 
                 <!-- Outils de Recherche et Filtres -->
                 <div class="space-y-3 border-b border-slate-200/70 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
@@ -730,14 +760,27 @@ const toggleTranscript = (id) => {
             </div>
             
             <!-- 2. VOLET CENTRAL : FIL DE DISCUSSION / BIENVENUE -->
-            <div class="flex-1 flex flex-col h-full bg-[#f0f2f5] dark:bg-slate-950 relative">
+            <div
+                class="relative h-full w-full flex-1 flex-col bg-[#f0f2f5] lg:flex dark:bg-slate-950"
+                :class="conversation ? 'flex' : 'hidden'"
+            >
                 
                 <!-- A. SI CONVERSATION ACTIVE -->
                 <template v-if="conversation">
                   
                     <!-- En-tête active -->
                     <div class="z-10 flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-slate-200/70 bg-white px-4 py-3 dark:border-slate-800/80 dark:bg-slate-900">
-                        <div class="flex min-w-0 items-center gap-3">
+                        <div class="flex min-w-0 items-center gap-2 sm:gap-3">
+                            <!-- Retour à la liste : seul chemin de sortie quand
+                                 le fil occupe tout l'écran. -->
+                            <button
+                                class="btn-ghost -ml-2 px-2 lg:hidden"
+                                aria-label="Retour à la liste des conversations"
+                                @click="backToList"
+                            >
+                                <Icon name="chevronLeft" size="sm" />
+                            </button>
+
                             <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-200 text-sm font-semibold text-slate-600 dark:bg-slate-700 dark:text-slate-300">
                                 {{ (conversation.contact?.name || conversation.contact?.profile_name || 'C')[0].toUpperCase() }}
                             </div>
@@ -751,7 +794,13 @@ const toggleTranscript = (id) => {
                             </div>
                         </div>
 
-                        <div class="flex flex-wrap items-center gap-2">
+                        <!--
+                          Sur mobile ces cinq contrôles passeraient sur trois
+                          lignes et mangeraient le fil. Ils tiennent sur une
+                          seule ligne qui défile latéralement, et retrouvent
+                          leur disposition normale à partir de 1024 px.
+                        -->
+                        <div class="-mx-1 flex w-full items-center gap-2 overflow-x-auto px-1 pb-1 lg:mx-0 lg:w-auto lg:flex-wrap lg:overflow-visible lg:px-0 lg:pb-0">
                             <!-- Sélecteur de statut -->
                             <select
                                 class="input w-auto cursor-pointer py-1.5 text-xs"
@@ -1075,7 +1124,7 @@ const toggleTranscript = (id) => {
             <!-- 3. VOLET DROIT : DETAILS PROSPECT & NOTES INTERNES -->
             <aside
                 v-if="conversation && showSidebar"
-                class="flex h-full w-80 shrink-0 flex-col border-l border-slate-200/70 bg-white dark:border-slate-800 dark:bg-slate-900"
+                class="absolute inset-0 z-20 flex h-full w-full shrink-0 flex-col border-l border-slate-200/70 bg-white lg:relative lg:inset-auto lg:z-auto lg:w-80 dark:border-slate-800 dark:bg-slate-900"
             >
                 <div class="flex shrink-0 items-center justify-between border-b border-slate-200/70 px-4 py-3.5 dark:border-slate-800/80">
                     <h3 class="section-title">Détails</h3>

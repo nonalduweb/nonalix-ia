@@ -61,34 +61,36 @@ const tenantRows = computed(() =>
                 </p>
             </div>
 
-            <table class="w-full text-sm">
-                <thead class="border-b border-slate-100 text-left text-xs uppercase tracking-wide text-slate-500 dark:border-slate-800">
-                    <tr>
-                        <th class="px-5 py-3 font-medium">Fournisseur</th>
-                        <th class="px-5 py-3 font-medium">Modèle</th>
-                        <th class="px-5 py-3 font-medium">Appels</th>
-                        <th class="px-5 py-3 font-medium">Tokens entrée</th>
-                        <th class="px-5 py-3 font-medium">Tokens sortie</th>
-                        <th class="px-5 py-3 font-medium">Latence moy.</th>
-                        <th class="px-5 py-3 font-medium">Coût</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-                    <tr v-for="row in byModel" :key="row.provider + row.model">
-                        <td class="px-5 py-3">{{ row.provider }}</td>
-                        <td class="px-5 py-3 font-mono text-xs">{{ row.model }}</td>
-                        <td class="px-5 py-3 tabular-nums">{{ Number(row.calls).toLocaleString('fr-FR') }}</td>
-                        <td class="px-5 py-3 tabular-nums text-slate-500">
-                            {{ Number(row.input_tokens).toLocaleString('fr-FR') }}
-                        </td>
-                        <td class="px-5 py-3 tabular-nums text-slate-500">
-                            {{ Number(row.output_tokens).toLocaleString('fr-FR') }}
-                        </td>
-                        <td class="px-5 py-3 tabular-nums text-slate-500">{{ row.avg_latency_ms }} ms</td>
-                        <td class="px-5 py-3 font-medium tabular-nums">{{ euros(row.cost_micros) }}</td>
-                    </tr>
-                </tbody>
-            </table>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="border-b border-slate-100 text-left text-xs uppercase tracking-wide text-slate-500 dark:border-slate-800">
+                        <tr>
+                            <th class="px-5 py-3 font-medium">Fournisseur</th>
+                            <th class="px-5 py-3 font-medium">Modèle</th>
+                            <th class="px-5 py-3 font-medium">Appels</th>
+                            <th class="px-5 py-3 font-medium">Tokens entrée</th>
+                            <th class="px-5 py-3 font-medium">Tokens sortie</th>
+                            <th class="px-5 py-3 font-medium">Latence moy.</th>
+                            <th class="px-5 py-3 font-medium">Coût</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                        <tr v-for="row in byModel" :key="row.provider + row.model">
+                            <td class="px-5 py-3">{{ row.provider }}</td>
+                            <td class="px-5 py-3 font-mono text-xs">{{ row.model }}</td>
+                            <td class="px-5 py-3 tabular-nums">{{ Number(row.calls).toLocaleString('fr-FR') }}</td>
+                            <td class="px-5 py-3 tabular-nums text-slate-500">
+                                {{ Number(row.input_tokens).toLocaleString('fr-FR') }}
+                            </td>
+                            <td class="px-5 py-3 tabular-nums text-slate-500">
+                                {{ Number(row.output_tokens).toLocaleString('fr-FR') }}
+                            </td>
+                            <td class="px-5 py-3 tabular-nums text-slate-500">{{ row.avg_latency_ms }} ms</td>
+                            <td class="px-5 py-3 font-medium tabular-nums">{{ euros(row.cost_micros) }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
 
             <p v-if="!byModel.length" class="px-5 py-10 text-center text-sm text-slate-500">
                 Aucun appel IA sur la période.
@@ -100,28 +102,30 @@ const tenantRows = computed(() =>
                 Compteurs par entreprise — {{ period }}
             </h2>
 
-            <table class="w-full text-sm">
-                <thead class="border-b border-slate-100 text-left text-xs uppercase tracking-wide text-slate-500 dark:border-slate-800">
-                    <tr>
-                        <th class="px-5 py-3 font-medium">Entreprise</th>
-                        <th class="px-5 py-3 font-medium">Msg. envoyés</th>
-                        <th class="px-5 py-3 font-medium">Msg. reçus</th>
-                        <th class="px-5 py-3 font-medium">Requêtes IA</th>
-                        <th class="px-5 py-3 font-medium">Documents</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-                    <tr v-for="row in tenantRows" :key="row.tenantId">
-                        <td class="px-5 py-3">
-                            <Link :href="`/tenants/${row.tenantId}`" class="hover:underline">{{ row.name }}</Link>
-                        </td>
-                        <td class="px-5 py-3 tabular-nums">{{ (row.metrics.messages_sent ?? 0).toLocaleString('fr-FR') }}</td>
-                        <td class="px-5 py-3 tabular-nums">{{ (row.metrics.messages_received ?? 0).toLocaleString('fr-FR') }}</td>
-                        <td class="px-5 py-3 tabular-nums">{{ (row.metrics.ai_requests ?? 0).toLocaleString('fr-FR') }}</td>
-                        <td class="px-5 py-3 tabular-nums text-slate-500">{{ row.metrics.documents_stored ?? 0 }}</td>
-                    </tr>
-                </tbody>
-            </table>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="border-b border-slate-100 text-left text-xs uppercase tracking-wide text-slate-500 dark:border-slate-800">
+                        <tr>
+                            <th class="px-5 py-3 font-medium">Entreprise</th>
+                            <th class="px-5 py-3 font-medium">Msg. envoyés</th>
+                            <th class="px-5 py-3 font-medium">Msg. reçus</th>
+                            <th class="px-5 py-3 font-medium">Requêtes IA</th>
+                            <th class="px-5 py-3 font-medium">Documents</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                        <tr v-for="row in tenantRows" :key="row.tenantId">
+                            <td class="px-5 py-3">
+                                <Link :href="`/tenants/${row.tenantId}`" class="hover:underline">{{ row.name }}</Link>
+                            </td>
+                            <td class="px-5 py-3 tabular-nums">{{ (row.metrics.messages_sent ?? 0).toLocaleString('fr-FR') }}</td>
+                            <td class="px-5 py-3 tabular-nums">{{ (row.metrics.messages_received ?? 0).toLocaleString('fr-FR') }}</td>
+                            <td class="px-5 py-3 tabular-nums">{{ (row.metrics.ai_requests ?? 0).toLocaleString('fr-FR') }}</td>
+                            <td class="px-5 py-3 tabular-nums text-slate-500">{{ row.metrics.documents_stored ?? 0 }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
 
             <p v-if="!tenantRows.length" class="px-5 py-10 text-center text-sm text-slate-500">
                 Aucun compteur consolidé pour cette période.

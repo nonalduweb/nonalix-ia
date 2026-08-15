@@ -73,62 +73,64 @@ const formatDateTime = (iso) => (iso ? new Date(iso).toLocaleString('fr-FR') : '
         </div>
 
         <div class="card overflow-hidden p-0">
-            <table class="w-full text-sm">
-                <thead class="border-b border-slate-100 text-left text-xs uppercase tracking-wide text-slate-500 dark:border-slate-800">
-                    <tr>
-                        <th class="px-5 py-3 font-medium">Incident</th>
-                        <th class="px-5 py-3 font-medium">Entreprise</th>
-                        <th class="px-5 py-3 font-medium">Occurrences</th>
-                        <th class="px-5 py-3 font-medium">Dernière</th>
-                        <th class="px-5 py-3 font-medium">Niveau</th>
-                        <th class="px-5 py-3" />
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-                    <tr
-                        v-for="incident in incidents.data"
-                        :key="incident.id"
-                        class="transition hover:bg-slate-50 dark:hover:bg-slate-800"
-                        :class="incident.resolved_at && 'opacity-50'"
-                    >
-                        <td class="px-5 py-3">
-                            <button class="text-left font-medium hover:underline" @click="inspecting = incident">
-                                {{ incident.title }}
-                            </button>
-                            <p class="font-mono text-xs text-slate-500">{{ incident.source }} · {{ incident.code }}</p>
-                        </td>
-                        <td class="px-5 py-3">
-                            <Link
-                                v-if="incident.tenant"
-                                :href="`/tenants/${incident.tenant.id}`"
-                                class="hover:underline"
-                            >
-                                {{ incident.tenant.name }}
-                            </Link>
-                            <span v-else class="text-slate-400">Plateforme</span>
-                        </td>
-                        <!-- Les occurrences identiques sont agrégées : une panne
-                             de fournisseur produit une ligne, pas des milliers. -->
-                        <td class="px-5 py-3 tabular-nums">{{ incident.occurrences }}</td>
-                        <td class="px-5 py-3 text-xs text-slate-500">{{ formatDateTime(incident.last_seen_at) }}</td>
-                        <td class="px-5 py-3">
-                            <StatusBadge :status="incident.level" :label="LEVEL_LABELS[incident.level]" />
-                        </td>
-                        <td class="px-5 py-3 text-right">
-                            <button
-                                v-if="!incident.resolved_at"
-                                class="text-xs text-slate-500 hover:underline"
-                                @click="resolve(incident)"
-                            >
-                                Résoudre
-                            </button>
-                            <span v-else class="text-xs text-slate-400">
-                                Résolu par {{ incident.resolver?.name ?? '—' }}
-                            </span>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="border-b border-slate-100 text-left text-xs uppercase tracking-wide text-slate-500 dark:border-slate-800">
+                        <tr>
+                            <th class="px-5 py-3 font-medium">Incident</th>
+                            <th class="px-5 py-3 font-medium">Entreprise</th>
+                            <th class="px-5 py-3 font-medium">Occurrences</th>
+                            <th class="px-5 py-3 font-medium">Dernière</th>
+                            <th class="px-5 py-3 font-medium">Niveau</th>
+                            <th class="px-5 py-3" />
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                        <tr
+                            v-for="incident in incidents.data"
+                            :key="incident.id"
+                            class="transition hover:bg-slate-50 dark:hover:bg-slate-800"
+                            :class="incident.resolved_at && 'opacity-50'"
+                        >
+                            <td class="px-5 py-3">
+                                <button class="text-left font-medium hover:underline" @click="inspecting = incident">
+                                    {{ incident.title }}
+                                </button>
+                                <p class="font-mono text-xs text-slate-500">{{ incident.source }} · {{ incident.code }}</p>
+                            </td>
+                            <td class="px-5 py-3">
+                                <Link
+                                    v-if="incident.tenant"
+                                    :href="`/tenants/${incident.tenant.id}`"
+                                    class="hover:underline"
+                                >
+                                    {{ incident.tenant.name }}
+                                </Link>
+                                <span v-else class="text-slate-400">Plateforme</span>
+                            </td>
+                            <!-- Les occurrences identiques sont agrégées : une panne
+                                 de fournisseur produit une ligne, pas des milliers. -->
+                            <td class="px-5 py-3 tabular-nums">{{ incident.occurrences }}</td>
+                            <td class="px-5 py-3 text-xs text-slate-500">{{ formatDateTime(incident.last_seen_at) }}</td>
+                            <td class="px-5 py-3">
+                                <StatusBadge :status="incident.level" :label="LEVEL_LABELS[incident.level]" />
+                            </td>
+                            <td class="px-5 py-3 text-right">
+                                <button
+                                    v-if="!incident.resolved_at"
+                                    class="text-xs text-slate-500 hover:underline"
+                                    @click="resolve(incident)"
+                                >
+                                    Résoudre
+                                </button>
+                                <span v-else class="text-xs text-slate-400">
+                                    Résolu par {{ incident.resolver?.name ?? '—' }}
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
 
             <p v-if="!incidents.data.length" class="px-5 py-12 text-center text-sm text-slate-500">
                 Aucun incident pour ces critères.

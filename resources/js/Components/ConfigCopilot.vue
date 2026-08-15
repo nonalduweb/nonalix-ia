@@ -192,9 +192,11 @@ const scrollToBottom = () => {
             </span>
         </button>
 
-        <!-- Sidebar d'aide Copilote -->
-        <div 
-            class="fixed inset-y-0 left-0 z-40 w-80 transform bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 shadow-2xl transition duration-300 flex flex-col justify-between"
+        <!-- Sidebar d'aide Copilote.
+             max-w-[85vw] : sur un téléphone étroit, 320 px couvrent l'écran
+             entier et le tiroir n'a plus de bord visible. Il en garde un. -->
+        <div
+            class="fixed inset-y-0 left-0 z-40 flex w-80 max-w-[85vw] transform flex-col justify-between border-r border-slate-200 bg-white shadow-2xl transition duration-300 dark:border-slate-800 dark:bg-slate-900"
             :class="isOpen ? 'translate-x-0' : '-translate-x-full'"
         >
             <div class="flex-1 overflow-y-auto p-5 space-y-6">

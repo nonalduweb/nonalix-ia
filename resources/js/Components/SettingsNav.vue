@@ -35,12 +35,18 @@ const blocking = computed(() =>
 </script>
 
 <template>
-    <nav class="mb-4 flex flex-wrap gap-1 border-b border-slate-200 dark:border-slate-800">
+    <!--
+      Une seule ligne qui défile latéralement, et non un retour à la ligne :
+      neuf onglets se répartissaient sur quatre lignes sur un téléphone, et
+      repoussaient le contenu de la page sous le pli. `scrollbar-width: none`
+      masque la barre — le geste reste possible, l'encombrement disparaît.
+    -->
+    <nav class="mb-4 flex gap-1 overflow-x-auto border-b border-slate-200 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden dark:border-slate-800">
         <Link
             v-for="item in items"
             :key="item.href"
             :href="item.href"
-            class="-mb-px flex items-center gap-1.5 border-b-2 px-4 py-2.5 text-sm transition"
+            class="-mb-px flex shrink-0 items-center gap-1.5 border-b-2 px-4 py-2.5 text-sm whitespace-nowrap transition"
             :class="
                 isCurrent(item.href)
                     ? 'border-brand-600 font-medium text-brand-700 dark:text-brand-100'

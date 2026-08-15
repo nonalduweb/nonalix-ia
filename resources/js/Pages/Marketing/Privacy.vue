@@ -100,15 +100,17 @@ const subprocessors = [
 
             <section class="mb-10">
                 <h2 class="mb-3 text-lg font-semibold">Sous-traitants</h2>
-                <table class="w-full text-sm">
-                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-                        <tr v-for="[name, purpose, zone] in subprocessors" :key="name" class="align-top">
-                            <td class="py-3 pr-4 font-medium">{{ name }}</td>
-                            <td class="py-3 pr-4 text-slate-600 dark:text-slate-300">{{ purpose }}</td>
-                            <td class="py-3 font-mono text-xs text-slate-400">{{ zone }}</td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                            <tr v-for="[name, purpose, zone] in subprocessors" :key="name" class="align-top">
+                                <td class="py-3 pr-4 font-medium">{{ name }}</td>
+                                <td class="py-3 pr-4 text-slate-600 dark:text-slate-300">{{ purpose }}</td>
+                                <td class="py-3 font-mono text-xs text-slate-400">{{ zone }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </section>
 
             <section class="mb-10">
