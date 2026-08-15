@@ -73,6 +73,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->encryptCookies(except: []);
 
         $middleware->web(append: [
+            \App\Http\Middleware\PreventBackHistoryCaching::class,
             InjectRequestContext::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,

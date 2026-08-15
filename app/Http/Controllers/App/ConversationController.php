@@ -99,7 +99,7 @@ class ConversationController
                 : null,
             'operators'     => User::query()->ofTenant($conversation->tenant_id)->select('id', 'name')->get(),
             'agents'        => Agent::query()->select('id', 'name')->get(),
-            'windowOpen'    => $conversation->isWithinServiceWindow(),
+            'windowOpen'    => $conversation->isWritable(),
             'windowExpires' => $conversation->window_expires_at?->toIso8601String(),
             'templates'     => $conversation->whatsappAccount
                 ? $conversation->whatsappAccount->templates()->approved()->get()

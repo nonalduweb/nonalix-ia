@@ -95,6 +95,21 @@ class Conversation extends Model
         return $this->window_expires_at->isAfter($at ?? CarbonImmutable::now());
     }
 
+    /**
+     * L'opérateur peut-il écrire librement sur cette conversation ?
+     *
+     * La fenêtre de 24 h est une règle de Meta, pas une règle de Nonalix : elle
+     * n'a aucun sens sur le widget web ni par courrier. Or `window_expires_at`
+     * n'est posée que par le webhook WhatsApp — les conversations des autres
+     * canaux l'avaient donc toujours à null, et l'interface y désactivait la
+     * saisie. Un opérateur ne pouvait pas répondre à un visiteur de son propre
+     * site.
+     */
+    public function isWritable(): bool
+    {
+        return $this->channel !== 'whatsapp' || $this->isWithinServiceWindow();
+    }
+
     /** Recalcule la fenêtre à partir d'un message entrant. */
     public function refreshServiceWindow(CarbonImmutable $inboundAt): void
     {
