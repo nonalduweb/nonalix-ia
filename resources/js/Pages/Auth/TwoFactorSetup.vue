@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { Head, router, useForm, usePage } from '@inertiajs/vue3';
+import BrandLogo from '@/Components/BrandLogo.vue';
 
 const props = defineProps({
     enabled: Boolean,
@@ -55,9 +56,15 @@ const copyCodes = () => {
     <Head title="Authentification à deux facteurs" />
 
     <div class="mx-auto max-w-xl px-4 py-12">
+        <!-- Quand la 2FA est imposée, cet écran s'affiche seul, sans le cadre
+             de l'application : sans logo, rien n'indique où l'on se trouve. -->
+        <div v-if="required" class="mb-8 flex justify-center">
+            <BrandLogo size="lg" />
+        </div>
+
         <h1 class="mb-2 text-xl font-semibold">Authentification à deux facteurs</h1>
 
-        <p v-if="required" class="mb-6 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        <p v-if="required" class="alert-info mb-6 border-amber-200/70 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-300">
             Votre rôle impose la 2FA. Elle doit être activée avant d'accéder à la plateforme.
         </p>
         <p v-else class="mb-6 text-sm text-slate-500">
@@ -222,5 +229,18 @@ const copyCodes = () => {
                 <button class="btn-secondary" @click="startEmail">Recevoir par e-mail</button>
             </div>
         </section>
+
+        <!-- Sortie de secours, uniquement quand la page est imposée : elle
+             s'affiche alors hors du cadre applicatif, donc sans le bouton de
+             déconnexion de l'en-tête. -->
+        <div v-if="required" class="mt-8 border-t border-slate-200 pt-6 text-center dark:border-slate-800">
+            <button
+                type="button"
+                class="cursor-pointer text-sm text-slate-500 underline underline-offset-2 hover:text-slate-800 dark:hover:text-white"
+                @click="router.post('/logout')"
+            >
+                Se déconnecter et changer de compte
+            </button>
+        </div>
     </div>
 </template>

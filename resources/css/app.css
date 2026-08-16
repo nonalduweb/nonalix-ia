@@ -308,6 +308,131 @@
     }
 }
 
+/* ── Illustration du héros (AgentOrbit) ───────────────────────────────────
+   Un mockup de téléphone fixe et des cartes de capacité qui flottent
+   autour, chacune à son propre rythme — l'irrégularité est ce qui rend le
+   mouvement organique plutôt que mécanique. Couleurs de tuile réservées à
+   cette illustration : le site commercial n'a pas de variante sombre (voir
+   `.marketing` plus bas), les classes `dark:` des tuiles de l'application
+   n'ont donc pas leur place ici. */
+@layer components {
+    .agent-orbit {
+        position: relative;
+        width: 21rem;
+        height: 23rem;
+    }
+
+    .phone-mock {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 13.5rem;
+        transform: translate(-50%, -50%);
+        border-radius: 1.5rem;
+        border: 1px solid var(--color-slate-200);
+        background: white;
+        padding: 0.875rem;
+        box-shadow: var(--shadow-lift);
+    }
+
+    .bubble {
+        max-width: 85%;
+        border-radius: 0.9rem;
+        padding: 0.4rem 0.65rem;
+        font-size: 0.6875rem;
+        line-height: 1.35;
+    }
+
+    .bubble-in {
+        border-bottom-left-radius: 0.25rem;
+        background: var(--color-slate-100);
+        color: var(--color-slate-700);
+    }
+
+    .bubble-out {
+        margin-left: auto;
+        border-bottom-right-radius: 0.25rem;
+        background: var(--color-slate-900);
+        color: white;
+    }
+
+    .bubble-typing {
+        display: flex;
+        width: fit-content;
+        align-items: center;
+        gap: 0.25rem;
+        padding-block: 0.55rem;
+    }
+
+    .bubble-typing span {
+        height: 0.3rem;
+        width: 0.3rem;
+        border-radius: 9999px;
+        background: var(--color-slate-400);
+        animation: typing-bounce 1.2s ease-in-out infinite;
+    }
+
+    .bubble-typing span:nth-child(2) { animation-delay: 0.15s; }
+    .bubble-typing span:nth-child(3) { animation-delay: 0.3s; }
+
+    .float-card {
+        position: absolute;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        border-radius: 0.9rem;
+        border: 1px solid var(--color-slate-200);
+        background: white;
+        padding: 0.55rem 0.8rem;
+        box-shadow: var(--shadow-card);
+        animation: card-float 6s ease-in-out infinite;
+    }
+
+    .pos-tl { top: 0.5rem;    left: -0.5rem; animation-duration: 5.5s; animation-delay: 0s; }
+    .pos-tr { top: -0.25rem;  right: -0.75rem; animation-duration: 6.5s; animation-delay: 0.6s; }
+    .pos-bl { bottom: 1.5rem; left: -1rem;   animation-duration: 6s;   animation-delay: 1.1s; }
+    .pos-br { bottom: 0;      right: -0.5rem; animation-duration: 7s;  animation-delay: 0.3s; }
+
+    .tile-mini {
+        display: flex;
+        height: 2rem;
+        width: 2rem;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.65rem;
+    }
+
+    .tone-brand   { background: var(--color-brand-50);   color: var(--color-brand-600); }
+    .tone-emerald { background: oklch(0.97 0.02 155);    color: oklch(0.55 0.14 155); }
+    .tone-amber   { background: oklch(0.97 0.03 75);     color: oklch(0.55 0.15 75); }
+    .tone-violet  { background: oklch(0.96 0.02 300);    color: oklch(0.53 0.18 300); }
+}
+
+@keyframes typing-bounce {
+    0%, 60%, 100% { transform: translateY(0);      opacity: 0.4; }
+    30%           { transform: translateY(-2px);   opacity: 1;   }
+}
+
+@keyframes card-float {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50%      { transform: translateY(-10px) rotate(-1deg); }
+}
+
+@media (max-width: 639px) {
+    .agent-orbit {
+        width: 17rem;
+        height: 20rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .float-card,
+    .bubble-typing span {
+        animation: none;
+    }
+}
+
 /*
  * Site commercial : rendu clair pour tous les visiteurs.
  *

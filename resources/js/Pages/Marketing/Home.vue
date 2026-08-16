@@ -1,6 +1,7 @@
 <script setup>
 import { Head, Link } from '@inertiajs/vue3';
 import MarketingLayout from '@/Layouts/MarketingLayout.vue';
+import AgentOrbit from '@/Components/Marketing/AgentOrbit.vue';
 
 defineProps({
     appUrl: String,
@@ -48,29 +49,35 @@ const guarantees = [
     <MarketingLayout>
         <!-- Héros aligné à gauche et non centré : une colonne de texte se lit
              plus vite, et la promesse tient en une ligne. -->
-        <section class="mx-auto max-w-5xl px-6 pt-24 pb-20 sm:pt-32">
-            <h1
-                v-reveal
-                class="max-w-3xl text-[2.75rem] font-semibold leading-[1.08] tracking-tight sm:text-6xl"
-            >
-                Vos clients écrivent.<br />
-                L'agent répond.
-            </h1>
+        <section class="mx-auto max-w-5xl px-6 pt-20 pb-20 sm:pt-28">
+            <div class="grid items-center gap-8 lg:grid-cols-[1fr_auto] lg:gap-4">
+                <div>
+                    <h1
+                        v-reveal
+                        class="max-w-3xl text-[2.75rem] font-semibold leading-[1.08] tracking-tight sm:text-6xl"
+                    >
+                        Vos clients écrivent.<br />
+                        L'agent répond.
+                    </h1>
 
-            <p v-reveal="80" class="mt-7 max-w-xl text-lg leading-relaxed text-slate-600">
-                Sur votre numéro WhatsApp habituel, jour et nuit, avec vos propres
-                informations. Et il passe la main à votre équipe dès que la demande
-                le mérite.
-            </p>
+                    <p v-reveal="80" class="mt-7 max-w-xl text-lg leading-relaxed text-slate-600">
+                        Sur votre numéro WhatsApp habituel, jour et nuit, avec vos propres
+                        informations. Et il passe la main à votre équipe dès que la demande
+                        le mérite.
+                    </p>
 
-            <div v-reveal="160" class="mt-10 flex flex-wrap items-center gap-3">
-                <Link href="/demande" class="btn-ink px-6 py-3 text-base">Demander un accès</Link>
-                <Link href="/tarifs" class="btn-secondary px-6 py-3 text-base">Voir les tarifs</Link>
+                    <div v-reveal="160" class="mt-10 flex flex-wrap items-center gap-3">
+                        <Link href="/demande" class="btn-ink px-6 py-3 text-base">Demander un accès</Link>
+                        <Link href="/tarifs" class="btn-secondary px-6 py-3 text-base">Voir les tarifs</Link>
+                    </div>
+
+                    <p v-reveal="220" class="mt-5 text-sm text-slate-500">
+                        14 jours d'essai · sans carte bancaire · à partir de 15 000 F CFA par mois
+                    </p>
+                </div>
+
+                <AgentOrbit v-reveal="120" class="mx-auto hidden sm:block" />
             </div>
-
-            <p v-reveal="220" class="mt-5 text-sm text-slate-500">
-                14 jours d'essai · sans carte bancaire · à partir de 15 000 F CFA par mois
-            </p>
         </section>
 
         <!-- Séparation par la couleur de fond plutôt que par un trait : c'est
